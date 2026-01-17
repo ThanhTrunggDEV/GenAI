@@ -1,12 +1,14 @@
 import os
+
+# Cấu hình môi trường (phải đặt trước khi import torch/cv2)
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import cv2
 import torch
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import models, transforms
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 class MotifExtractor:
     def __init__(self, use_gpu=True):
@@ -167,9 +169,9 @@ class MotifExtractor:
         return motif_img[y1:y2, x1:x2]
 
 
-def visualize_result(original, motif):
+def visualize_result(original, motif, save_path=None):
     """
-    Hiển thị kết quả so sánh.
+    Hiển thị kết quả so sánh và lưu ảnh nếu có đường dẫn.
     """
     plt.figure(figsize=(10, 5))
     
@@ -187,12 +189,24 @@ def visualize_result(original, motif):
     plt.axis("off")
 
     plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path)
+        print(f"Result saved to: {save_path}")
+        
     plt.show()
 
 
 def main():
     # Đường dẫn ảnh đầu vào
-    img_path = "hmong.jpg"
+    input_dir = "input"
+    output_dir = "output"
+    
+    # Đảm bảo thư mục output tồn tại
+    os.makedirs(output_dir, exist_ok=True)
+    
+    img_name = "hmong.jpg"
+    img_path = os.path.join(input_dir, img_name)
     
     # Kiểm tra file tồn tại
     if not os.path.exists(img_path):
@@ -211,8 +225,9 @@ def main():
         motif_raw = extractor.crop_motif(original_img, coord, scale)
         motif_refined = extractor.refine_motif(motif_raw)
         
-        # 4. Hiển thị
-        visualize_result(original_img, motif_refined)
+        # 4. Hiển thị và lưu kết quả
+        save_path = os.path.join(output_dir, f"result_{img_name}")
+        visualize_result(original_img, motif_refined, save_path=save_path)
         
     except Exception as e:
         print(f"An error occurred: {e}")
