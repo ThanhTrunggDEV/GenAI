@@ -191,11 +191,11 @@ def save_and_visualize(motif, unit, output_dir, file_pk):
 
 
 def main():
-    input_dir = "input"
-    output_dir = "output"
+    input_dir = "dataset/to_annotate"
+    output_dir = "outputs/refined"
     os.makedirs(output_dir, exist_ok=True)
     
-    img_name = "hmong.jpg"
+    img_name = "hoa-van-trang-tri-hmong-2.jpg"
     img_path = os.path.join(input_dir, img_name)
     
     try:

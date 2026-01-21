@@ -199,13 +199,14 @@ def visualize_result(original, motif, save_path=None):
 
 def main():
     # Đường dẫn ảnh đầu vào
-    input_dir = "input"
-    output_dir = "output"
+    input_dir = "dataset/to_annotate"
+    output_dir = "outputs/extracted"
     
     # Đảm bảo thư mục output tồn tại
     os.makedirs(output_dir, exist_ok=True)
     
-    img_name = "hmong.jpg"
+    # Use first available image if hmong.jpg doesn't exist
+    img_name = "hoa-van-trang-tri-hmong-2.jpg"
     img_path = os.path.join(input_dir, img_name)
     
     # Kiểm tra file tồn tại
