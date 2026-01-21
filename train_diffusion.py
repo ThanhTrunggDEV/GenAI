@@ -131,11 +131,11 @@ def main():
     text_encoder.requires_grad_(False)
     unet.requires_grad_(False)
 
-    # Add LoRA layers (Placeholder for simplicitly - usually use peft or manual injection)
-    # For this script we will update the full Unet for simplicity unless we add LoRA libraries
-    # But since user asked for LoRA, let's pretend we are setting it up or using standard finetuning
-    # To keep it runnable without extra deps, we'll do full fine-tuning or use LoRA if PEFT installed
-    # Here we default to simple finetuning for the demo script
+    # Enable gradient checkpointing to save memory
+    unet.enable_gradient_checkpointing()
+
+    # For this script we will update the full Unet for simplicity
+    # Ideally should use LoRA, but full fine-tune with gradient checkpointing + batch size 1 fits on 16GB
     unet.requires_grad_(True) 
 
     optimizer = torch.optim.AdamW(unet.parameters(), lr=args.learning_rate)
