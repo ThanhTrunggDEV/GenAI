@@ -1,0 +1,92 @@
+# Configuration for Hmong Pattern Generation Training
+
+# Model Settings
+model:
+  base_model: "stabilityai/stable-diffusion-2-1-base"
+  checkpoint: null  # Path to resume from checkpoint
+  
+  # LoRA Configuration
+  lora:
+    rank: 32
+    alpha: 64
+    dropout: 0.1
+    target_modules:
+      - "to_k"
+      - "to_q"
+      - "to_v"
+      - "to_out.0"
+
+# Training Settings
+training:
+  output_dir: "outputs/hmong-pattern-lora"
+  num_train_epochs: 10
+  max_train_steps: 5000
+  
+  # Batch and Gradient
+  train_batch_size: 4
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  
+  # Learning Rate
+  learning_rate: 1e-4
+  lr_scheduler: "cosine"
+  lr_warmup_steps: 500
+  
+  # Optimization
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_weight_decay: 1e-2
+  adam_epsilon: 1e-8
+  max_grad_norm: 1.0
+  
+  # Saving
+  save_steps: 500
+  checkpointing_steps: 1000
+  
+  # Logging
+  logging_dir: "logs"
+  report_to: "tensorboard"  # or "wandb"
+  
+  # Mixed Precision
+  mixed_precision: "fp16"  # or "bf16" if supported
+  
+  # Data
+  resolution: 512
+  center_crop: false
+  random_flip: true
+
+# Dataset
+data:
+  train_data_dir: "dataset/training/train/images"
+  train_captions: "dataset/training/train/captions.txt"
+  
+  val_data_dir: "dataset/training/val/images"
+  val_captions: "dataset/training/val/captions.txt"
+  
+  metadata_dir: "dataset/metadata"
+  embeddings_dir: "dataset/embeddings"
+
+# Custom Loss Weights
+loss:
+  diffusion_weight: 1.0
+  cultural_weight: 0.3
+  color_weight: 0.2
+
+# Validation
+validation:
+  validation_steps: 500
+  num_validation_images: 4
+  validation_prompts:
+    - "Hmong spiral pattern in indigo and white, traditional style"
+    - "Hmong flower pattern in blue, festive style"
+    - "Hmong geometric pattern with zigzag motifs, traditional batik"
+    - "Hmong traditional pattern with snail motif in black and beige"
+
+# Hardware
+hardware:
+  device: "cuda"  # or "cpu" for testing
+  num_workers: 4
+  pin_memory: true
+
+# Seed
+seed: 42

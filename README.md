@@ -1,190 +1,236 @@
-# Hmong Pattern Dataset - AI Generative System
+# Hmong Pattern AI Generation System - Complete Implementation
 
-> **Tạo sinh hoa văn họa tiết Hmong sử dụng AI với ràng buộc văn hóa**
+> **Status**: 🚧 70% Complete - GPU Training Required
 
-## 📊 Dataset Overview
+## 🎯 Project Goal
 
-- **Original Images**: 45 Hmong traditional patterns
-- **Augmented Dataset**: 225 images (5x multiplication)
-- **Training Split**: 157 train / 34 val / 34 test
-- **Metadata**: Full JSON annotations with cultural context
+Generate culturally-authentic Hmong textile patterns using AI while preserving traditional design principles through constraint-based generation.
 
-## 🎯 Features
+---
 
-✅ **AI-Assisted Annotation**
-- Automated motif detection
-- Color analysis
-- Symmetry classification  
-- Cultural meaning mapping
+## ✅ Completed Components
 
-✅ **Training-Ready Format**
-- Train/val/test splits (70/15/15)
-- Automatic caption generation
-- Stable Diffusion compatible
+### 📊 Dataset (100% Complete)
+- ✅ **45** original Hmong patterns with full metadata
+- ✅ **225** augmented images (5x multiplication)
+- ✅ **Training splits**: 157 train / 34 val / 34 test
+- ✅ **Auto-generated captions** for all images
+- ✅ **Demo web viewer** (`demo_viewer.html`)
 
-✅ **Demo Visualization**
-- Standalone HTML viewer
-- No server required
-- Embedded images
+### 🤖 Stage 1: Cultural Encoding (100% Complete)
+- ✅ `models/visual_encoder.py` - ResNet50 visual features (512-dim)
+- ✅ `models/cultural_encoder.py` - Metadata embeddings (256-dim)
+- ✅ `models/combine_embeddings.py` - Unified representation (768-dim)
+
+### ⚙️ Infrastructure (100% Complete)
+- ✅ `requirements.txt` - All dependencies
+- ✅ `config.yaml` - Training configuration
+- ✅ `DEPLOYMENT.md` - Cloud GPU deployment guide
+- ✅ `ANNOTATION_METHODOLOGY.md` - Technical documentation
+
+---
+
+## 🚧 In Progress
+
+### Stage 2: Controlled Generative Model (70%)
+- ⏳ `train_diffusion.py` - LoRA fine-tuning script
+- ⏳ Custom loss functions (L_cultural, L_color)
+- ⏳ Training monitoring & checkpointing
+
+### Stage 3: Constraint Control (30%)
+- ⏳ Motif consistency validator
+- ⏳ Symbolic correctness checker
+- ⏳ Structure validator
+
+---
 
 ## 🚀 Quick Start
 
-### 1. View Demo
-
+### View Demo (No Setup Required)
 ```bash
 # Open in browser
 open demo_viewer.html
 ```
 
-### 2. Generate More Augmentations
+### Run on Cloud GPU (Recommended)
 
-```bash
-python augment_dataset.py
+**Google Colab**:
+1. Upload folder to Google Drive
+2. Open new Colab notebook
+3. Mount Drive and run:
+```python
+%cd /content/drive/MyDrive/GenAI
+!pip install -q -r requirements.txt
+!python train_diffusion.py
 ```
 
-### 3. Prepare Training Data
+**Kaggle Notebooks**:
+1. Create dataset from GenAI folder
+2. Enable GPU (P100/T4)
+3. Run training notebook
 
-```bash
-python prepare_training.py
-```
+See [`DEPLOYMENT.md`](file:///e:/Bai%20bao/report%20fpf/GenAI/DEPLOYMENT.md) for detailed instructions.
 
-## 📁 Directory Structure
+---
+
+## 📁 Repository Structure
 
 ```
 GenAI/
 ├── dataset/
 │   ├── to_annotate/        # 45 original images
 │   ├── metadata/           # 45 JSON annotations
-│   ├── augmented/          # 225 augmented images + metadata
-│   └── training/           # Train/val/test splits with captions
-│       ├── train/          # 157 images
-│       ├── val/            # 34 images
-│       └── test/           # 34 images
-├── batch_annotate.py       # Batch annotation tool
-├── augment_dataset.py      # Data augmentation
-├── prepare_training.py     # Training preparation
-├── create_demo.py          # Demo viewer generator
-├── demo_viewer.html        # 🌐 Interactive demo
-└── ANNOTATION_METHODOLOGY.md
+│   ├── augmented/          # 225 augmented images
+│   └── training/           # Train/val/test splits
+│       ├── train/          # 157 images + captions
+│       ├── val/            # 34 images + captions
+│       └── test/           # 34 images + captions
+├── models/
+│   ├── visual_encoder.py        # Stage 1: Visual features
+│   ├── cultural_encoder.py      # Stage 1: Cultural metadata
+│  ├── combine_embeddings.py    # Stage 1: Combined embedding
+│   └── __init__.py
+├── validators/                  # Stage 3: Constraint checkers
+├── batch_annotate.py            # Annotation tool
+├── augment_dataset.py           # Data augmentation
+├── prepare_training.py          # Training splits
+├── train_diffusion.py           # Stage 2: Main training (⏳)
+├── generate_patterns.py         # Pattern generation (⏳)
+├── evaluate.py                  # Metrics calculation (⏳)
+├── config.yaml                  # Training config
+├── requirements.txt             # Dependencies
+├── DEPLOYMENT.md                # Deployment guide
+├── ANNOTATION_METHODOLOGY.md    # Technical docs
+├── demo_viewer.html             # Interactive demo
+└── README.md                    # This file
 ```
-
-## 🏷️ Annotation Schema
-
-Each pattern includes:
-
-```json
-{
-  "pattern_info": {
-    "motif_type": ["geometric", "floral"],
-    "specific_motifs": ["spiral", "snail", "zigzag"],
-    "dominant_motif": "spiral"
-  },
-  "color_info": {
-    "colors": ["indigo", "black", "white"],
-    "dominant_color": "indigo",
-    "color_scheme": "traditional"
-  },
-  "visual_structure": {
-    "symmetry": "rotational",
-    "repetition": "grid",
-    "complexity": "high"
-  },
-  "cultural_meaning": {
-    "symbolism": "protection, ancestors",
-    "ritual_use": "daily_wear"
-  }
-}
-```
-
-## 🔧 Scripts
-
-| Script | Purpose | Output |
-|--------|---------|--------|
-| `batch_annotate.py` | Batch annotation | 45 JSON files |
-| `augment_dataset.py` | Data augmentation | 225 images |
-| `prepare_training.py` | Training split | Train/val/test |
-| `create_demo.py` | Demo viewer | HTML file |
-
-## 📈 Dataset Statistics
-
-### Motif Distribution
-- Geometric patterns: 93%
-- Floral patterns: 11%
-- Mixed: 4%
-
-### Color Palette
-- Beige/Natural: 84%
-- Blue: 16%
-
-### Augmentation
-- **Method**: Rotation (90°, 180°, 270°) + Horizontal flip
-- **Multiplication**: 5x (from 45 → 225)
-- **Quality**: Lossless (95% JPEG quality)
-
-## 🎨 Sample Captions
-
-Generated automatically from metadata:
-
-```
-Hmong spiral pattern, in black and beige, traditional style
-Hmong sun pattern, in black and blue, festive style
-Hmong flower pattern, in black and blue, festive style
-```
-
-## 🔮 Next Steps
-
-### For Training
-1. Fine-tune Stable Diffusion with LoRA
-2. Use training split (157 images)
-3. Text-to-image conditioning with generated captions
-
-### For Research
-1. Expand dataset (target: 500+ images)
-2. Field collection from Sapa/Lao Cai
-3. Expert validation with Hmong artisans
-
-## 📚 Documentation
-
-- [Annotation Methodology](ANNOTATION_METHODOLOGY.md) - Technical approach
-- [Image Sources](HMONG_VIETNAM_IMAGE_SOURCES.md) - Data provenance
-- [Collection Guide](OPENSOURCE_DATA_LINKS.md) - How to add more data
-
-## 🤝 Contributing
-
-To add more patterns:
-1. Place images in `dataset/to_annotate/`
-2. Run `python batch_annotate.py` (or manual with `annotate_images.py`)
-3. Run augmentation pipeline
-4. Update training splits
-
-## ⚖️ License & Ethics
-
-- **Dataset**: For academic research only
-- **Cultural respect**: Annotations reviewed for cultural accuracy
-- **Attribution**: All sources tracked in metadata
-- **Community**: Results will be shared with Hmong community
-
-## 🎯 Project Goal
-
-Build a culturally-constrained generative AI model that:
-- Preserves traditional Hmong design principles
-- Assists artisans (not replaces them)
-- Helps preserve cultural heritage through digitization
-- Enables controlled innovation within cultural bounds
-
-## 👥 Credits
-
-- **Annotation**: AI-assisted batch processing
-- **Cultural Context**: Based on ethnographic research
-- **Tools**: Python, PIL, Stable Diffusion (planned)
-
-## 📞 Contact
-
-For questions or collaboration:
-- GitHub: https://github.com/ThanhTrunggDEV/GenAI
 
 ---
 
-**Status**: ✅ Demo Ready  
-**Version**: 1.0  
-**Created**: 2026-01-21
+## 🎨 Workflow Architecture
+
+```
+Input (Photos) → Stage 1 (Encoding) → Stage 2 (Generation) → Stage 3 (Validation) → Output
+                      ↓                       ↓                      ↓
+                Visual + Cultural     Stable Diffusion       Motif/Color/
+                  Features              + LoRA               Structure Check
+```
+
+See [`implementation_plan.md`](file:///C:/Users/admin/.gemini/antigravity/brain/d0320cda-de7b-4192-91d4-4c6946d1831c/implementation_plan.md) for detailed technical specification.
+
+---
+
+## 📊 Current Statistics
+
+| Metric | Value |
+|--------|-------|
+| Original Patterns | 45 |
+| Augmented Dataset | 225 |
+| Training Images | 157 |
+| Validation Images | 34 |
+| Test Images | 34 |
+| Metadata Files | 270 |
+| Unique Motifs | 25+ |
+| Color Palette | 11 colors |
+
+---
+
+## ⏱️ Timeline
+
+- ✅ **Week 1-2**: Data collection & annotation
+- ✅ **Week 3**: Augmentation & training prep
+- ✅ **Week 4**: Stage 1 implementation
+- ⏳ **Week 5-6**: Stage 2-3 training (GPU required)
+- ⏳ **Week 7**: Evaluation & refinement
+
+**Current Progress**: ~70% complete
+
+---
+
+## 💻 Hardware Requirements
+
+### For Development (CPU OK)
+- Data augmentation
+- Annotation
+- Demo viewing
+
+### For Training (GPU Required)
+- **Minimum**: NVIDIA GPU with 12GB VRAM (RTX 3090, T4)
+- **Recommended**: A100 (40GB)
+- **Training time**: 8-12 hours
+
+**Cloud options**: Google Colab Pro ($10/month), Kaggle (Free), Lambda Labs
+
+---
+
+## 📈 Expected Results
+
+After training completion:
+- ✨ Generate new Hmong patterns from text prompts
+- 🎯 Control motifs, colors, and cultural elements
+- 📊 FID score < 50, Cultural consistency > 80%
+- 🖼️ High-quality 512x512 outputs
+
+---
+
+## 🔧 Scripts Usage
+
+### Data Preparation
+```bash
+python batch_annotate.py          # Annotate patterns
+python augment_dataset.py         # Create variations
+python prepare_training.py        # Create splits
+```
+
+### Model Training
+```bash
+python models/visual_encoder.py   # Extract visual features
+python models/cultural_encoder.py # Extract cultural features
+python models/combine_embeddings.py
+python train_diffusion.py         # Train model (GPU)
+```
+
+### Generation & Evaluation
+```bash
+python generate_patterns.py --prompt "Hmong spiral pattern in indigo"
+python evaluate.py --real dataset/test --generated outputs/samples
+```
+
+---
+
+## 📚 Documentation
+
+- [`DEPLOYMENT.md`](DEPLOYMENT.md) - How to run on cloud GPU
+- [`ANNOTATION_METHODOLOGY.md`](ANNOTATION_METHODOLOGY.md) - Annotation specs
+- [`implementation_plan.md`](file:///C:/Users/admin/.gemini/antigravity/brain/d0320cda-de7b-4192-91d4-4c6946d1831c/implementation_plan.md) - Full technical plan
+
+---
+
+## 🎯 Next Steps
+
+1. **Upload to Cloud**: Push code to Colab/Kaggle
+2. **Run Training**: 8-12 hours on A100
+3. **Generate Samples**: Test pattern generation
+4. **Evaluate**: Calculate metrics
+5. **Paper Writing**: Document results for CITA 2026
+
+---
+
+## 📧 Citation & Contact
+
+If you use this work:
+```
+@misc{hmong-pattern-ai-2026,
+  title={Culturally-Constrained Generative AI for Hmong Textile Patterns},
+  author={[Your Name]},
+  year={2026},
+  publisher={GitHub},
+  url={https://github.com/ThanhTrunggDEV/GenAI}
+}
+```
+
+---
+
+**Status**: Ready for GPU training  
+**Last Updated**: 2026-01-21  
+**GitHub**: https://github.com/ThanhTrunggDEV/GenAI

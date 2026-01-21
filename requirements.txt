@@ -1,0 +1,37 @@
+# Required Dependencies for Hmong Pattern Generation System
+
+## Core ML/DL Libraries
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+diffusers>=0.21.0
+accelerate>=0.20.0
+
+## LoRA Fine-tuning
+peft>=0.4.0
+loralib>=0.1.1
+
+## Image Processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+scikit-image>=0.21.0
+
+## Evaluation Metrics
+pytorch-fid>=0.3.0
+scipy>=1.10.0
+
+## Utilities
+numpy>=1.24.0
+pandas>=2.0.0
+tqdm>=4.65.0
+wandb>=0.15.0  # For training monitoring
+tensorboard>=2.13.0
+
+## Configuration
+pyyaml>=6.0
+omegaconf>=2.3.0
+
+## API/Deployment (Optional)
+gradio>=3.40.0  # For demo interface
+fastapi>=0.100.0
+uvicorn>=0.23.0
