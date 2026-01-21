@@ -18,15 +18,15 @@ Generate culturally-authentic Hmong textile patterns using AI while preserving t
 - ✅ **Demo web viewer** (`demo_viewer.html`)
 
 ### 🤖 Stage 1: Cultural Encoding (100% Complete)
-- ✅ `models/visual_encoder.py` - ResNet50 visual features (512-dim)
-- ✅ `models/cultural_encoder.py` - Metadata embeddings (256-dim)
-- ✅ `models/combine_embeddings.py` - Unified representation (768-dim)
+- ✅ `motif/models/visual_encoder.py` - ResNet50 visual features (512-dim)
+- ✅ `motif/models/cultural_encoder.py` - Metadata embeddings (256-dim)
+- ✅ `motif/models/combine_embeddings.py` - Unified representation (768-dim)
 
 ### ⚙️ Infrastructure (100% Complete)
 - ✅ `requirements.txt` - All dependencies
 - ✅ `config.yaml` - Training configuration
-- ✅ `DEPLOYMENT.md` - Cloud GPU deployment guide
-- ✅ `ANNOTATION_METHODOLOGY.md` - Technical documentation
+- ✅ `docs/DEPLOYMENT.md` - Cloud GPU deployment guide
+- ✅ `docs/ANNOTATION_METHODOLOGY.md` - Technical documentation
 
 ---
 
@@ -69,7 +69,7 @@ open demo_viewer.html
 2. Enable GPU (P100/T4)
 3. Run training notebook
 
-See [`DEPLOYMENT.md`](file:///e:/Bai%20bao/report%20fpf/GenAI/DEPLOYMENT.md) for detailed instructions.
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed instructions.
 
 ---
 
@@ -85,22 +85,33 @@ GenAI/
 │       ├── train/          # 157 images + captions
 │       ├── val/            # 34 images + captions
 │       └── test/           # 34 images + captions
-├── models/
-│   ├── visual_encoder.py        # Stage 1: Visual features
-│   ├── cultural_encoder.py      # Stage 1: Cultural metadata
-│  ├── combine_embeddings.py    # Stage 1: Combined embedding
-│   └── __init__.py
-├── validators/                  # Stage 3: Constraint checkers
-├── batch_annotate.py            # Annotation tool
-├── augment_dataset.py           # Data augmentation
-├── prepare_training.py          # Training splits
-├── train_diffusion.py           # Stage 2: Main training (⏳)
-├── generate_patterns.py         # Pattern generation (⏳)
-├── evaluate.py                  # Metrics calculation (⏳)
+├── motif/
+│   ├── core/
+│   │   ├── extractor.py    # Pattern extractor
+│   │   └── refiner.py      # Pattern refiner
+│   ├── data/
+│   │   ├── annotate.py
+│   │   ├── augment.py
+│   │   ├── batch_annotate.py
+│   │   ├── download.py
+│   │   └── prepare.py
+│   ├── models/
+│   │   ├── visual_encoder.py    # Stage 1: Visual features
+│   │   ├── cultural_encoder.py  # Stage 1: Cultural metadata
+│   │   ├── combine_embeddings.py # Stage 1: Combined embedding
+│   │   └── __init__.py
+│   ├── pipeline/
+│   │   ├── evaluate.py
+│   │   └── generate.py
+│   ├── validators/              # Stage 3: Constraint checkers
+│   └── visualization/
+│       └── create_demo.py
+├── run_full_pipeline.py         # Main entry point
 ├── config.yaml                  # Training config
 ├── requirements.txt             # Dependencies
-├── DEPLOYMENT.md                # Deployment guide
-├── ANNOTATION_METHODOLOGY.md    # Technical docs
+├── docs/
+│   ├── DEPLOYMENT.md            # Deployment guide
+│   └── ANNOTATION_METHODOLOGY.md # Technical docs
 ├── demo_viewer.html             # Interactive demo
 └── README.md                    # This file
 ```
@@ -177,30 +188,30 @@ After training completion:
 
 ### Data Preparation
 ```bash
-python batch_annotate.py          # Annotate patterns
-python augment_dataset.py         # Create variations
-python prepare_training.py        # Create splits
+python -m motif.data.batch_annotate # Annotate patterns
+python -m motif.data.augment      # Create variations
+python -m motif.data.prepare      # Create splits
 ```
 
 ### Model Training
 ```bash
-python models/visual_encoder.py   # Extract visual features
-python models/cultural_encoder.py # Extract cultural features
-python models/combine_embeddings.py
+python -m motif.models.visual_encoder   # Extract visual features
+python -m motif.models.cultural_encoder # Extract cultural features
+python -m motif.models.combine_embeddings
 python train_diffusion.py         # Train model (GPU)
 ```
 
 ### Generation & Evaluation
 ```bash
-python generate_patterns.py --prompt "Hmong spiral pattern in indigo"
-python evaluate.py --real dataset/test --generated outputs/samples
+python -m motif.pipeline.generate --prompt "Hmong spiral pattern in indigo"
+python -m motif.pipeline.evaluate --real dataset/test --generated outputs/samples
 ```
 
 ---
 
 ## 📚 Documentation
-
-- [`DEPLOYMENT.md`](DEPLOYMENT.md) - How to run on cloud GPU
+docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) - How to run on cloud GPU
+- [`docs/ANNOTATION_METHODOLOGY.md`](docs/d) - How to run on cloud GPU
 - [`ANNOTATION_METHODOLOGY.md`](ANNOTATION_METHODOLOGY.md) - Annotation specs
 - [`implementation_plan.md`](file:///C:/Users/admin/.gemini/antigravity/brain/d0320cda-de7b-4192-91d4-4c6946d1831c/implementation_plan.md) - Full technical plan
 

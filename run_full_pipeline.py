@@ -33,8 +33,8 @@ def main():
     if not Path("dataset/training/train/images").exists():
         print("\n❌ Dataset not found!")
         print("Run data preparation first:")
-        print("  python augment_dataset.py")
-        print("  python prepare_training.py")
+        print("  python -m motif.data.augment")
+        print("  python -m motif.data.prepare")
         return
     
     print("\n📋 Pipeline Steps:")
@@ -51,19 +51,19 @@ def main():
     print("="*70)
     
     if not run_command(
-        [sys.executable, "models/visual_encoder.py"],
+        [sys.executable, "-m", "motif.models.visual_encoder"],
         "Extract Visual Features"
     ):
         return
     
     if not run_command(
-        [sys.executable, "models/cultural_encoder.py"],
+        [sys.executable, "-m", "motif.models.cultural_encoder"],
         "Extract Cultural Features"
     ):
         return
     
     if not run_command(
-        [sys.executable, "models/combine_embeddings.py"],
+        [sys.executable, "-m", "motif.models.combine_embeddings"],
         "Combine Embeddings"
     ):
         return
@@ -95,7 +95,7 @@ def main():
     print("="*70)
     
     if not run_command(
-        [sys.executable, "generate_patterns.py",
+        [sys.executable, "-m", "motif.pipeline.generate",
          "--prompt", "Hmong spiral pattern in indigo",
          "--num_samples", "10"],
         "Generate Sample Patterns"
@@ -108,7 +108,7 @@ def main():
     print("="*70)
     
     if not run_command(
-        [sys.executable, "evaluate.py"],
+        [sys.executable, "-m", "motif.pipeline.evaluate"],
         "Evaluate Generated Patterns"
     ):
         return

@@ -46,7 +46,7 @@ def calculate_cultural_consistency(generated_dir, metadata_dir, validators):
         consistency_score: Percentage (0-100)
         details: Dict with breakdown
     """
-    from validators import ValidationPipeline
+    from motif.validators import ValidationPipeline
     
     generated_dir = Path(generated_dir)
     metadata_dir = Path(metadata_dir)

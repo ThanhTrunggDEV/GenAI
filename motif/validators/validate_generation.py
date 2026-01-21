@@ -7,11 +7,13 @@ Runs all validators and makes accept/reject decisions
 
 from pathlib import Path
 import sys
-sys.path.append(str(Path(__file__).parent.parent))
+# Make sure we can import from motif if running standalone
+if __name__ == "__main__":
+    sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from validators.motif_validator import MotifValidator
-from validators.symbolic_validator import SymbolicValidator
-from validators.structure_validator import StructureValidator
+from motif.validators.motif_validator import MotifValidator
+from motif.validators.symbolic_validator import SymbolicValidator
+from motif.validators.structure_validator import StructureValidator
 
 class ValidationPipeline:
     """
