@@ -42,9 +42,7 @@ class CulturalSemanticEncoder(nn.Module):
         
         self.embedding_dim = embedding_dim
         
-        # Create vocabular
-
-y mappings
+        # Create vocabulary mappings
         self.motif_to_idx = {m: i for i, m in enumerate(MOTIF_TYPES)}
         self.color_to_idx = {c: i for i, c in enumerate(COLORS)}
         self.symmetry_to_idx = {s: i for i, s in enumerate(SYMMETRY_TYPES)}
