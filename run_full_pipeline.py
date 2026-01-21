@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Full Pipeline Automation
+Runs entire workflow from encoding to generation (when model is trained)
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+def run_command(cmd, description):
+    """Run a command and print status"""
+    print(f"\n{'='*70}")
+    print(f"🚀 {description}")
+    print(f"{'='*70}")
+    print(f"Command: {' '.join(cmd)}\n")
+    
+    result = subprocess.run(cmd, capture_output=False, text=True)
+    
+    if result.returncode != 0:
+        print(f"\n❌ Failed: {description}")
+        return False
+    
+    print(f"\n✅ Completed: {description}")
+    return True
+
+def main():
+    print("🎨 HMONG PATTERN GENERATION - FULL PIPELINE")
+    print("="*70)
+    
+    # Check if dataset exists
+    if not Path("dataset/training/train/images").exists():
+        print("\n❌ Dataset not found!")
+        print("Run data preparation first:")
+        print("  python augment_dataset.py")
+        print("  python prepare_training.py")
+        return
+    
+    print("\n📋 Pipeline Steps:")
+    print("1. Extract visual embeddings")
+    print("2. Extract cultural embeddings")
+    print("3. Combine embeddings")
+    print("4. Train model (GPU required)")
+    print("5. Generate samples")
+    print("6. Evaluate results")
+    
+    # Stage 1: Encoding
+    print("\n" + "="*70)
+    print("STAGE 1: CULTURAL ENCODING")
+    print("="*70)
+    
+    if not run_command(
+        [sys.executable, "models/visual_encoder.py"],
+        "Extract Visual Features"
+    ):
+        return
+    
+    if not run_command(
+        [sys.executable, "models/cultural_encoder.py"],
+        "Extract Cultural Features"
+    ):
+        return
+    
+    if not run_command(
+        [sys.executable, "models/combine_embeddings.py"],
+        "Combine Embeddings"
+    ):
+        return
+    
+    # Stage 2: Training (GPU required)
+    print("\n" + "="*70)
+    print("STAGE 2: MODEL TRAINING")
+    print("="*70)
+    print("\n⚠️  GPU REQUIRED FOR THIS STEP")
+    print("This step cannot run on CPU.")
+    print("\nTo run training:")
+    print("1. Upload this repository to Google Colab or Kaggle")
+    print("2. Enable GPU (A100 recommended)")
+    print("3. Run: python train_diffusion.py")
+    print("\nSkipping training for now...")
+    
+    # Check if model exists
+    checkpoint_dir = Path("outputs/hmong-pattern-lora")
+    if not checkpoint_dir.exists():
+        print("\n❌ No trained model found")
+        print(f"Expected checkpoint at: {checkpoint_dir}")
+        print("\nPipeline completed up to training stage.")
+        print("Continue on GPU platform to complete.")
+        return
+    
+    # Stage 3: Generation
+    print("\n" + "="*70)
+    print("STAGE 3: PATTERN GENERATION")
+    print("="*70)
+    
+    if not run_command(
+        [sys.executable, "generate_patterns.py",
+         "--prompt", "Hmong spiral pattern in indigo",
+         "--num_samples", "10"],
+        "Generate Sample Patterns"
+    ):
+        return
+    
+    # Stage 4: Evaluation
+    print("\n" + "="*70)
+    print("STAGE 4: EVALUATION")
+    print("="*70)
+    
+    if not run_command(
+        [sys.executable, "evaluate.py"],
+        "Evaluate Generated Patterns"
+    ):
+        return
+    
+    print("\n" + "="*70)
+    print("✅ PIPELINE COMPLETE")
+    print("="*70)
+    print("\nResults:")
+    print("  - Embeddings: dataset/embeddings/")
+    print("  - Generated: outputs/generated/")
+    print("  - Evaluation: evaluation_results.json")
+
+
+if __name__ == "__main__":
+    main()
