@@ -32,6 +32,7 @@ from diffusers.optimization import get_scheduler
 from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 from packaging import version
+from peft import LoraConfig, get_peft_model
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -134,9 +135,18 @@ def main():
     # Enable gradient checkpointing to save memory
     unet.enable_gradient_checkpointing()
 
-    # For this script we will update the full Unet for simplicity
-    # Ideally should use LoRA, but full fine-tune with gradient checkpointing + batch size 1 fits on 16GB
-    unet.requires_grad_(True) 
+    # Use LoRA for memory efficiency (Fixes OOM on 12GB cards)
+    unet.requires_grad_(False)
+    
+    lora_config = LoraConfig(
+        r=32,
+        lora_alpha=64,
+        target_modules=["to_k", "to_q", "to_v", "to_out.0"],
+        lora_dropout=0.1,
+        bias="none",
+    )
+    unet = get_peft_model(unet, lora_config)
+    unet.print_trainable_parameters()
 
     optimizer = torch.optim.AdamW(unet.parameters(), lr=args.learning_rate)
     
