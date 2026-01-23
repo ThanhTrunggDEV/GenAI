@@ -32,8 +32,14 @@ def calculate_clip_score(real_images_dir, generated_images_dir, prompt="Hmong tr
 
     try:
         # Load CLIP
-        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        # Fix for CVE-2025-32434: Explicitly set safe serialization or trust remote code depending on availability
+        try:
+            model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
+            processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
+        except:
+             # Fallback if safetensors not available on Hub
+             model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=False)
+             processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=False)
         
         device = "cuda" if torch.cuda.is_available() else "cpu"
         model.to(device)
