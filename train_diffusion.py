@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--resolution", type=int, default=512)
     parser.add_argument("--train_batch_size", type=int, default=4)
-    parser.add_argument("--num_train_epochs", type=int, default=10)
+    parser.add_argument("--num_train_epochs", type=int, default=30)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=4)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
