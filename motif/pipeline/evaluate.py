@@ -148,53 +148,11 @@ def calculate_cultural_consistency(generated_dir, metadata_dir=None, validators=
         return 0.0, {}
 
 
-# Old implementation kept for reference but renamed
-def calculate_cultural_consistency_legacy(generated_dir, metadata_dir, validators):    for img_path in image_files:
-        # Load image
-        image = Image.open(img_path)
-        
-        # Try to find corresponding metadata
-        meta_path = metadata_dir / f"{img_path.stem}.json"
-        if not meta_path.exists():
-            # Use default metadata
-            metadata = {
-                "pattern_info": {"specific_motifs": []},
-                "cultural_meaning": {"ritual_use": "daily_wear"},
-                "visual_structure": {"symmetry": "unknown"}
-            }
-        else:
-            with open(meta_path, 'r', encoding='utf-8') as f:
-                metadata = json.load(f)
-        
-        # Validate
-        is_valid, results = pipeline.validate_pattern(image, metadata)
-        
-        if is_valid:
-            passed += 1
-        else:
-            failed += 1
-        
-        # Track breakdown
-        if results['motif']['valid']:
-            results_breakdown['motif_pass'] += 1
-        if results['symbolic']['valid']:
-            results_breakdown['symbolic_pass'] += 1
-        if results['structure']['valid']:
-            results_breakdown['structure_pass'] += 1
-    
-    total = passed + failed
-    consistency_score = (passed / total * 100) if total > 0 else 0
-    
-    details = {
-        'total_images': total,
-        'passed': passed,
-        'failed': failed,
-        'consistency_score': consistency_score,        'motif_pass_rate': results_breakdown['motif_pass'] / total * 100 if total > 0 else 0,
-        'symbolic_pass_rate': results_breakdown['symbolic_pass'] / total * 100 if total > 0 else 0,
-        'structure_pass_rate': results_breakdown['structure_pass'] / total * 100 if total > 0 else 0
-    }
-    
-    return consistency_score, details
+
+# Old implementation removed to avoid syntax errors
+# def calculate_cultural_consistency_legacy(generated_dir, metadata_dir, validators):
+#     pass
+
 
 
 def main():
