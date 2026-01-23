@@ -12,6 +12,17 @@ from PIL import Image
 import json
 import torch
 from transformers import CLIPProcessor, CLIPModel
+import cv2
+
+# Try importing research-grade metrics
+try:
+    import lpips
+    from torch_fidelity import calculate_metrics
+    HAS_METRICS = True
+except ImportError:
+    HAS_METRICS = False
+    print("⚠️ Research metrics libraries (lpips, torch-fidelity) not found.")
+    print("   Install for NCKH report: pip install lpips torch-fidelity")
 
 def calculate_fid_lpips(real_dir, generated_dir):
     """
