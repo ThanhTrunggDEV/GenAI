@@ -262,52 +262,6 @@ def calculate_cultural_consistency(generated_dir, metadata_dir=None, validators=
         print(f"⚠️ Failed to calculate consistency: {e}")
         return 0.0, {}
 
-def calculate_color_consistency(real_dir, generated_dir):
-    """
-    Compare color distribution between Real and Generated datasets using Histogram Correlation.
-    Useful for preserving cultural color palettes (e.g., Indigo blue, red/green embroidery).
-    """
-    import cv2
-    print(f"📊 Calculating Color Consistency...")
-    
-    def get_avg_hist(img_dir):
-        img_dir = Path(img_dir)
-        files = list(img_dir.glob("*.jpg")) + list(img_dir.glob("*.png"))
-        if not files: return None
-        
-        avg_hist = np.zeros((180, 256), dtype=np.float32) # HSV space (H=180, S/V=256)
-        count = 0
-        
-        for f in files:
-            try:
-                # Read with OpenCV
-                img = cv2.imread(str(f))
-                if img is None: continue
-                img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-                
-                # Calc Histogram for Hue and Saturation (most important for style)
-                # H bins = 30 (colors), S bins = 32 (vividness)
-                hist = cv2.calcHist([img_hsv], [0, 1], None, [30, 32], [0, 180, 0, 256])
-                cv2.normalize(hist, hist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
-                
-                avg_hist = avg_hist[:30, :32] + hist
-                count += 1
-            except: pass
-            
-        return avg_hist / count if count > 0 else None
-
-    real_hist = get_avg_hist(real_dir)
-    gen_hist = get_avg_hist(generated_dir)
-    
-    if real_hist is None or gen_hist is None:
-        print("⚠️ Could not load images for color comparison.")
-        return 0.0
-
-    # Compare using Correlation method (1.0 = perfect match)
-    score = cv2.compareHist(real_hist, gen_hist, cv2.HISTCMP_CORREL)
-    print(f"✅ Color Similarity Score: {score:.4f} (Closet to 1.0 is better)")
-    return max(0.0, score) # Ensure non-negative
-
 def calculate_diversity_score(generated_dir):
     """
     Calculate diversity among generated images using pixel-wise L2 distance.
@@ -373,11 +327,7 @@ def main():
         args.generated, args.metadata, None
     )
 
-    # 4. Color Consistency (New)
-    print("\n3. Color Palette Consistency")
-    color_score = calculate_color_consistency(args.real, args.generated)
-
-    # 5. Diversity Score (Legacy) - LPIPS replaces this for Paper
+    # 4. Diversity Score (Legacy) - LPIPS replaces this for Paper
     # diversity_score = calculate_diversity_score(args.generated)
     diversity_score = lpips_score if lpips_score > 0 else calculate_diversity_score(args.generated)
     
@@ -387,7 +337,6 @@ def main():
         "fid_score": fid_score,         # Add FID
         "lpips_score": lpips_score,     # Add LPIPS
         "cultural_consistency": consistency_score,
-        "color_similarity": color_score,
         "diversity_score": diversity_score,
         "details": consistency_details
     }
@@ -398,7 +347,6 @@ def main():
     print(f"   • LPIPS (Diversity):     {lpips_score:.4f} (Higher = Better)")
     print(f"   • CLIP Score (Align):    {clip_score:.4f} (Higher = Better)")
     print(f"   • Cultural Acc:          {consistency_score:.1f}%")
-    print(f"   • Color Sim:             {color_score:.4f}")
     print("="*70)
     
     with open(args.output, 'w') as f:
