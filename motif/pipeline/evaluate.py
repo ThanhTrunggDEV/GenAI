@@ -13,6 +13,8 @@ import json
 import torch
 from transformers import CLIPProcessor, CLIPModel
 import cv2
+import shutil
+import os
 
 # Try importing research-grade metrics
 try:
@@ -23,6 +25,30 @@ except ImportError:
     HAS_METRICS = False
     print("⚠️ Research metrics libraries (lpips, torch-fidelity) not found.")
     print("   Install for NCKH report: pip install lpips torch-fidelity")
+
+def preprocess_for_fid(source_dir, target_dir, size=(299, 299)):
+    """
+    Resize images to uniform size for FID calculation to avoid stack errors 
+    with mixed aspect ratios.
+    """
+    source_path = Path(source_dir)
+    target_path = Path(target_dir)
+    
+    if target_path.exists():
+        shutil.rmtree(target_path)
+    target_path.mkdir(parents=True, exist_ok=True)
+    
+    files = list(source_path.glob("*.png")) + list(source_path.glob("*.jpg"))
+    # print(f"   Preprocessing {len(files)} images for FID...")
+    
+    for file_path in files:
+        try:
+            with Image.open(file_path) as img:
+                # Resize to standard Inception size (299x299)
+                img_resized = img.resize(size, Image.Resampling.LANCZOS).convert('RGB')
+                img_resized.save(target_path / file_path.name)
+        except Exception as e:
+            pass
 
 def calculate_fid_lpips(real_dir, generated_dir):
     """
@@ -36,41 +62,68 @@ def calculate_fid_lpips(real_dir, generated_dir):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
     # 1. Calculate LPIPS
+    lpips_score = 0.0
     try:
         loss_fn_alex = lpips.LPIPS(net='alex').to(device)
         
         gen_files = list(Path(generated_dir).glob("*.png"))
-        if len(gen_files) < 2: return 0.0, 0.0
-
-        dists = []
-        for i in range(len(gen_files)-1):
-            img0 = lpips.im2tensor(lpips.load_image(str(gen_files[i]))).to(device)
-            img1 = lpips.im2tensor(lpips.load_image(str(gen_files[i+1]))).to(device)
-            dist = loss_fn_alex(img0, img1)
-            dists.append(dist.item())
+        if len(gen_files) < 2: 
+            print("⚠️ Not enough images for LPIPS")
+        else:
+            dists = []
+            # Compare random pairs to better estimate diversity
+            import random
+            random.shuffle(gen_files)
+            pairs_count = min(len(gen_files)-1, 100) # Limit pairs for speed
             
-        lpips_score = np.mean(dists)
-        print(f"✅ LPIPS Score: {lpips_score:.4f} (Higher is better diversity)")
+            for i in range(pairs_count):
+                img0 = lpips.im2tensor(lpips.load_image(str(gen_files[i]))).to(device)
+                img1 = lpips.im2tensor(lpips.load_image(str(gen_files[i+1]))).to(device)
+                dist = loss_fn_alex(img0, img1)
+                dists.append(dist.item())
+                
+            lpips_score = np.mean(dists) if dists else 0.0
+            print(f"✅ LPIPS Score: {lpips_score:.4f} (Higher is better diversity)")
     except Exception as e:
         print(f"⚠️ LPIPS Error: {e}")
         lpips_score = 0.0
 
     # 2. Calculate FID using torch-fidelity
     # Note: Requires at least ~100 images for valid FID, usually 10k+
+    fid_score = 0.0
     try:
-        metrics = calculate_metrics(
-            input1=str(real_dir), 
-            input2=str(generated_dir), 
-            cuda=True, 
-            isc=False, 
-            fid=True, 
-            kid=False, 
-            verbose=False
-        )
-        fid_score = metrics['frechet_inception_distance']
-        print(f"✅ FID Score: {fid_score:.4f} (Lower is better)")
+        # Preprocess images to temp dirs to ensure consistent size
+        temp_real = Path("temp_fid_real")
+        temp_gen = Path("temp_fid_gen")
+        
+        preprocess_for_fid(real_dir, temp_real)
+        preprocess_for_fid(generated_dir, temp_gen)
+        
+        # Check if we have images
+        if not list(temp_real.glob("*")) or not list(temp_gen.glob("*")):
+            print("⚠️ Skipping FID: No valid images found after preprocessing")
+        else:
+            metrics = calculate_metrics(
+                input1=str(temp_real), 
+                input2=str(temp_gen), 
+                cuda=torch.cuda.is_available(), 
+                isc=False, 
+                fid=True, 
+                kid=False, 
+                verbose=False
+            )
+            fid_score = metrics['frechet_inception_distance']
+            print(f"✅ FID Score: {fid_score:.4f} (Lower is better)")
+            
+        # Cleanup
+        if temp_real.exists(): shutil.rmtree(temp_real)
+        if temp_gen.exists(): shutil.rmtree(temp_gen)
+            
     except Exception as e:
-        print(f"⚠️ FID Error (needs more data/GPU): {e}")
+        print(f"⚠️ FID Error: {e}")
+        # Cleanup on error
+        if Path("temp_fid_real").exists(): shutil.rmtree("temp_fid_real", ignore_errors=True)
+        if Path("temp_fid_gen").exists(): shutil.rmtree("temp_fid_gen", ignore_errors=True)
         fid_score = 0.0
         
     return fid_score, lpips_score
