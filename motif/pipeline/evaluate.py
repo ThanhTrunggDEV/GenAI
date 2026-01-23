@@ -13,6 +13,57 @@ import json
 import torch
 from transformers import CLIPProcessor, CLIPModel
 
+def calculate_fid_lpips(real_dir, generated_dir):
+    """
+    Calculate FID (Fréchet Inception Distance) and LPIPS
+    Standard metrics for scientific papers (NCKH)
+    """
+    if not HAS_METRICS:
+        return 0.0, 0.0
+
+    print(f"📊 Calculating Research Metrics (FID & LPIPS)...")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # 1. Calculate LPIPS
+    try:
+        loss_fn_alex = lpips.LPIPS(net='alex').to(device)
+        
+        gen_files = list(Path(generated_dir).glob("*.png"))
+        if len(gen_files) < 2: return 0.0, 0.0
+
+        dists = []
+        for i in range(len(gen_files)-1):
+            img0 = lpips.im2tensor(lpips.load_image(str(gen_files[i]))).to(device)
+            img1 = lpips.im2tensor(lpips.load_image(str(gen_files[i+1]))).to(device)
+            dist = loss_fn_alex(img0, img1)
+            dists.append(dist.item())
+            
+        lpips_score = np.mean(dists)
+        print(f"✅ LPIPS Score: {lpips_score:.4f} (Higher is better diversity)")
+    except Exception as e:
+        print(f"⚠️ LPIPS Error: {e}")
+        lpips_score = 0.0
+
+    # 2. Calculate FID using torch-fidelity
+    # Note: Requires at least ~100 images for valid FID, usually 10k+
+    try:
+        metrics = calculate_metrics(
+            input1=str(real_dir), 
+            input2=str(generated_dir), 
+            cuda=True, 
+            isc=False, 
+            fid=True, 
+            kid=False, 
+            verbose=False
+        )
+        fid_score = metrics['frechet_inception_distance']
+        print(f"✅ FID Score: {fid_score:.4f} (Lower is better)")
+    except Exception as e:
+        print(f"⚠️ FID Error (needs more data/GPU): {e}")
+        fid_score = 0.0
+        
+    return fid_score, lpips_score
+
 def calculate_clip_score(real_images_dir, generated_images_dir, prompt="Hmong traditional textile pattern"):
     """
     Calculate CLIP Score to measure text-image alignment and similarity 
