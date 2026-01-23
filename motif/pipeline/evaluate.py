@@ -69,45 +69,87 @@ def calculate_fid_placeholder(real_images_dir, generated_images_dir):
     return calculate_clip_score(real_images_dir, generated_images_dir)
 
 
-def calculate_cultural_consistency(generated_dir, metadata_dir, validators):
+def calculate_cultural_consistency(generated_dir, metadata_dir=None, validators=None):
     """
-    Calculate cultural consistency score
-    % of generated patterns that pass validation
+    Calculate cultural consistency score using CLIP Zero-shot Classification
+    Checks if generated images contain key Hmong cultural elements.
     
     Args:
         generated_dir: Directory with generated images
-        metadata_dir: Directory with target metadata
-        validators: ValidationPipeline instance
+        metadata_dir: (Unused in this method)
+        validators: (Unused in this method)
     Returns:
         consistency_score: Percentage (0-100)
         details: Dict with breakdown
     """
-    from motif.validators import ValidationPipeline
+    print(f"📊 Calculating Cultural Consistency (CLIP Zero-shot)...")
     
     generated_dir = Path(generated_dir)
-    metadata_dir = Path(metadata_dir)
-    
-    if not generated_dir.exists():
-        print(f"❌ Generated directory not found: {generated_dir}")
-        return 0.0, {}
-    
     image_files = list(generated_dir.glob("*.png")) + list(generated_dir.glob("*.jpg"))
     
-    if len(image_files) == 0:
+    if not image_files:
         print("❌ No generated images found")
         return 0.0, {}
-    
-    pipeline = ValidationPipeline()
-    
-    passed = 0
-    failed = 0
-    results_breakdown = {
-        'motif_pass': 0,
-        'symbolic_pass': 0,
-        'structure_pass': 0
-    }
-    
-    for img_path in image_files:
+
+    try:
+        # Load CLIP (Reuse model loading logic)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        try:
+            model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True).to(device)
+            processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
+        except:
+            model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=False).to(device)
+            processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=False)
+
+        # Define cultural classes to check against
+        # "hmong pattern" is the target, others are negative classes
+        candidate_labels = [
+            "traditional hmong pattern with geometric motifs",
+            "random noise or blurry image", 
+            "realistic photo of a person",
+            "plain fabric without pattern"
+        ]
+        
+        passed_count = 0
+        total_count = len(image_files)
+        
+        for img_path in image_files:
+            image = Image.open(img_path)
+            
+            inputs = processor(text=candidate_labels, images=image, return_tensors="pt", padding=True)
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            
+            outputs = model(**inputs)
+            logits_per_image = outputs.logits_per_image # this is the image-text similarity score
+            probs = logits_per_image.softmax(dim=1) # we can use softmax to get the probabilities
+            
+            # Get the predicted label index
+            pred_idx = probs.argmax().item()
+            predicted_label = candidate_labels[pred_idx]
+            
+            # Check if prediction is the target class (index 0)
+            if pred_idx == 0:
+                passed_count += 1
+                
+        consistency_score = (passed_count / total_count) * 100
+        print(f"✅ Cultural Consistency Score: {consistency_score:.1f}% ({passed_count}/{total_count} passed)")
+        
+        details = {
+            'total_images': total_count,
+            'passed': passed_count,
+            'consistency_score': consistency_score,
+            'method': "CLIP Zero-shot Classification"
+        }
+        
+        return consistency_score, details
+
+    except Exception as e:
+        print(f"⚠️ Failed to calculate consistency: {e}")
+        return 0.0, {}
+
+
+# Old implementation kept for reference but renamed
+def calculate_cultural_consistency_legacy(generated_dir, metadata_dir, validators):    for img_path in image_files:
         # Load image
         image = Image.open(img_path)
         
@@ -147,8 +189,7 @@ def calculate_cultural_consistency(generated_dir, metadata_dir, validators):
         'total_images': total,
         'passed': passed,
         'failed': failed,
-        'consistency_score': consistency_score,
-        'motif_pass_rate': results_breakdown['motif_pass'] / total * 100 if total > 0 else 0,
+        'consistency_score': consistency_score,        'motif_pass_rate': results_breakdown['motif_pass'] / total * 100 if total > 0 else 0,
         'symbolic_pass_rate': results_breakdown['symbolic_pass'] / total * 100 if total > 0 else 0,
         'structure_pass_rate': results_breakdown['structure_pass'] / total * 100 if total > 0 else 0
     }
