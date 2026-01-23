@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hmong Pattern Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sample-prompt {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sample-prompt:hover {
+            background-color: #f8f9fa;
+            border-color: #0d6efd;
+        }
+        .generated-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .generated-image:hover {
+            transform: scale(1.02);
+        }
+        #loading {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold text-primary">Hmong Pattern AI</h1>
+                    <p class="lead text-muted">Generate culturally-authentic Hmong textile patterns</p>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <form id="generateForm">
+                            <div class="mb-4">
+                                <label for="prompt" class="form-label fw-bold">Describe your pattern:</label>
+                                <textarea class="form-control form-control-lg" id="prompt" rows="3" placeholder="E.g., A geometric Hmong pattern with spiral motifs in indigo blue..."></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Sample Prompts</label>
+                                <div class="list-group">
+                                    <button type="button" class="list-group-item list-group-item-action sample-prompt" onclick="setPrompt(this)">
+                                        Traditional Hmong spiral pattern with geometric borders in red and black
+                                    </button>
+                                    <button type="button" class="list-group-item list-group-item-action sample-prompt" onclick="setPrompt(this)">
+                                        Intricate cross-stitch Hmong flower motif on indigo cloth
+                                    </button>
+                                    <button type="button" class="list-group-item list-group-item-action sample-prompt" onclick="setPrompt(this)">
+                                        Snail shell pattern arranged in a diamond grid structure
+                                    </button>
+                                    <button type="button" class="list-group-item list-group-item-action sample-prompt" onclick="setPrompt(this)">
+                                        Abstract geometric Hmong symbols representing mountains and farming
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="numSamples" class="form-label">Number of Samples</label>
+                                    <select class="form-select" id="numSamples">
+                                        <option value="1">1 Image</option>
+                                        <option value="2">2 Images</option>
+                                        <option value="4" selected>4 Images</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="generateBtn">
+                                    ✨ Generate Patterns
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loading" class="text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5 class="text-muted">Generating patterns... This may take a moment.</h5>
+                    <p class="small text-muted">Running Stable Diffusion pipeline</p>
+                </div>
+
+                <!-- Results -->
+                <div id="results" class="row g-4">
+                    <!-- Images will be injected here -->
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setPrompt(element) {
+            document.getElementById('prompt').value = element.innerText.trim();
+        }
+
+        document.getElementById('generateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('prompt').value;
+            const numSamples = document.getElementById('numSamples').value;
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            // UI State: Loading
+            btn.disabled = true;
+            loading.style.display = 'block';
+            results.innerHTML = '';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        num_samples: parseInt(numSamples)
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    data.images.forEach(imgUrl => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-6';
+                        col.innerHTML = `
+                            <a href="${imgUrl}" target="_blank">
+                                <img src="${imgUrl}" class="generated-image" alt="Generated Pattern">
+                            </a>
+                        `;
+                        results.appendChild(col);
+                    });
+                } else {
+                    alert('Error: ' + data.error);
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred during generation.');
+            } finally {
+                // UI State: Reset
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
