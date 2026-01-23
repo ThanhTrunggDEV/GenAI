@@ -1,0 +1,13 @@
+{
+  "clip_score": 30.909690856933594,
+  "fid_score": 388.4103240586531,
+  "lpips_score": 0.45029330253601074,
+  "cultural_consistency": 100.0,
+  "diversity_score": 0.45029330253601074,
+  "details": {
+    "total_images": 10,
+    "passed": 10,
+    "consistency_score": 100.0,
+    "method": "CLIP Zero-shot Classification"
+  }
+}
