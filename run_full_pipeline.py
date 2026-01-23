@@ -72,16 +72,25 @@ def main():
     print("\n" + "="*70)
     print("STAGE 2: MODEL TRAINING")
     print("="*70)
-    print("\n⚠️  GPU REQUIRED FOR THIS STEP")
-    print("This step cannot run on CPU.")
-    print("\nTo run training:")
-    print("1. Upload this repository to Google Colab or Kaggle")
-    print("2. Enable GPU (A100 recommended)")
-    print("3. Run: python train_diffusion.py")
-    print("\nSkipping training for now...")
     
-    # Check if model exists
     checkpoint_dir = Path("outputs/hmong-pattern-lora")
+    
+    if checkpoint_dir.exists() and (checkpoint_dir / "adapter_model.bin").exists():
+        print("✅ Trained model found. Skipping training.")
+    else:
+        print("⚠️ Model not found. Starting training...")
+        # Automatically train if not found
+        if not run_command(
+            [sys.executable, "train_diffusion.py", 
+             "--train_batch_size", "4", 
+             "--gradient_accumulation_steps", "4",
+             "--num_train_epochs", "10"],
+            "Train Diffusion Model"
+        ):
+            print("\n❌ Training failed. Please check your GPU configuration.")
+            return
+
+    # Check again if model exists
     if not checkpoint_dir.exists():
         print("\n❌ No trained model found")
         print(f"Expected checkpoint at: {checkpoint_dir}")

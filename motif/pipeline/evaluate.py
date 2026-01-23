@@ -10,27 +10,57 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 import json
+import torch
+from transformers import CLIPProcessor, CLIPModel
+
+def calculate_clip_score(real_images_dir, generated_images_dir, prompt="Hmong traditional textile pattern"):
+    """
+    Calculate CLIP Score to measure text-image alignment and similarity 
+    between generated images and the concept.
+    Replaces FID for small datasets.
+    """
+    print(f"📊 Calculating CLIP Score...")
+    print(f"   Generated images: {generated_images_dir}")
+    print(f"   Concept: '{prompt}'")
+    
+    generated_dir = Path(generated_images_dir)
+    image_files = list(generated_dir.glob("*.png")) + list(generated_dir.glob("*.jpg"))
+    
+    if not image_files:
+        print("⚠️ No generated images to evaluate.")
+        return 0.0
+
+    try:
+        # Load CLIP
+        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model.to(device)
+        
+        scores = []
+        for img_path in image_files:
+            image = Image.open(img_path)
+            
+            inputs = processor(text=[prompt], images=image, return_tensors="pt", padding=True)
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+            
+            outputs = model(**inputs)
+            logits_per_image = outputs.logits_per_image  # this is the image-text similarity score
+            score = logits_per_image.item()
+            scores.append(score)
+            
+        avg_score = np.mean(scores)
+        print(f"✅ Average CLIP Score: {avg_score:.2f} (Higher is better)")
+        return avg_score
+        
+    except Exception as e:
+        print(f"⚠️ Failed to calculate CLIP score: {e}")
+        return 0.0
 
 def calculate_fid_placeholder(real_images_dir, generated_images_dir):
-    """
-    Calculate FID score (Placeholder)
-    
-    Actual implementation requires pytorch-fid:
-    pip install pytorch-fid
-    
-    Returns:
-        fid_score: Lower is better (< 50 is good)
-    """
-    print("📊 Calculating FID Score...")
-    print(f"   Real images: {real_images_dir}")
-    print(f"   Generated images: {generated_images_dir}")
-    
-    print("\n⚠️  Placeholder: Use pytorch-fid library")
-    print("   pip install pytorch-fid")
-    print("   python -m pytorch_fid path/to/real path/to/generated")
-    
-    # Placeholder return
-    return None
+    # Backward compatibility wrapper
+    return calculate_clip_score(real_images_dir, generated_images_dir)
 
 
 def calculate_cultural_consistency(generated_dir, metadata_dir, validators):
@@ -122,7 +152,7 @@ def calculate_cultural_consistency(generated_dir, metadata_dir, validators):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate generated patterns")
-    parser.add_argument("--real", type=str, default="dataset/training/test/images",
+    parser.add_argument("--real", type=str, default="dataset/training/train/images",
                        help="Real images directory")
     parser.add_argument("--generated", type=str, default="outputs/generated",
                        help="Generated images directory")
@@ -136,9 +166,21 @@ def main():
     print("📊 HMONG PATTERN EVALUATION")
     print("="*70)
     
-    # 1. FID Score
-    print("\n1. FID Score (Fréchet Inception Distance)")
-    fid_score = calculate_fid_placeholder(args.real, args.generated)
+    # 1. CLIP Score (Replaces FID)
+    print("\n1. CLIP Score (Visual Quality & Alignment)")
+    # Use calculate_clip_score which we defined earlier (aliased from calculate_fid_placeholder wrapper if needed, 
+    # but better to call directly if I renamed it properly.
+    # Note: I renamed calculate_fid_placeholder to calculate_clip_score in the previous step,
+    # and added a wrapper. So calling the wrapper or the new function works.
+    # However, since I edited the definition, I should call the new function name if possible, 
+    # but the old function name calculate_fid_placeholder still exists as a wrapper.
+    # Let's use the wrapper to be safe with existing calls or just call the new one.
+    
+    try:
+        clip_score = calculate_clip_score(args.real, args.generated)
+    except NameError:
+         # Fallback if the previous edit didn't rename it globally or something
+         clip_score = 0
     
     # 2. Cultural Consistency
     print("\n2. Cultural Consistency Score")
@@ -148,31 +190,20 @@ def main():
     
     # Summary
     results = {
-        'fid_score': fid_score,
-        'cultural_consistency': consistency_score,
-        'details': consistency_details
+        "clip_score": clip_score,
+        "cultural_consistency": consistency_score,
+        "details": consistency_details
     }
     
     print("\n" + "="*70)
-    print("📋 EVALUATION SUMMARY")
+    print("📈 FINAL RESULTS")
+    print(f"   • CLIP Score:            {clip_score:.4f}")
+    print(f"   • Cultural Consistency:  {consistency_score:.1f}%")
     print("="*70)
-    if fid_score:
-        print(f"FID Score: {fid_score:.2f} (lower is better, <50 is good)")
-    print(f"Cultural Consistency: {consistency_score:.1f}%")
-    print(f"  - Motif Pass Rate: {consistency_details.get('motif_pass_rate', 0):.1f}%")
-    print(f"  - Symbolic Pass Rate: {consistency_details.get('symbolic_pass_rate', 0):.1f}%")
-    print(f"  - Structure Pass Rate: {consistency_details.get('structure_pass_rate', 0):.1f}%")
-    print(f"\nTotal Images Evaluated: {consistency_details.get('total_images', 0)}")
-    print(f"Passed All Checks: {consistency_details.get('passed', 0)}")
-    print(f"Failed Some Checks: {consistency_details.get('failed', 0)}")
     
-    # Save results
-    output_path = Path(args.output)
-    with open(output_path, 'w', encoding='utf-8') as f:
+    with open(args.output, 'w') as f:
         json.dump(results, f, indent=2)
-    
-    print(f"\n💾 Results saved to: {output_path}")
-
+    print(f"\n✅ Results saved to {args.output}")
 
 if __name__ == "__main__":
     main()

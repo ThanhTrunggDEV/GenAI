@@ -7,8 +7,13 @@ Actual training must be done on GPU using Stable Diffusion
 """
 
 import argparse
+import logging
+import os
 from pathlib import Path
 import json
+import torch
+from diffusers import StableDiffusionPipeline
+from PIL import Image
 
 def generate_patterns(
     checkpoint_path,
@@ -16,77 +21,91 @@ def generate_patterns(
     motifs=None,
     colors=None,
     num_samples=4,
-    output_dir="outputs/generated"
+    output_dir="outputs/generated",
+    base_model="runwayml/stable-diffusion-v1-5"
 ):
     """
-    Generate Hmong patterns from text prompts and cultural constraints
-    
-    Args:
-        checkpoint_path: Path to trained LoRA checkpoint
-        prompt: Text description of desired pattern
-        motifs: List of specific motifs to include
-        colors: List of colors to use
-        num_samples: Number of samples to generate
-        output_dir: Output directory
-    
-    NOTE: This is a PLACEHOLDER. Actual implementation requires:
-    1. Trained Stable Diffusion + LoRA model
-    2. GPU for inference
-    3. diffusers library properly configured
+    Generate Hmong patterns from text prompts using trained LoRA
     """
     
-    print("⚠️  PLACEHOLDER: Generation Script")
-    print("\nThis script requires a trained model to function.")
-    print("To use this:")
-    print("1. Train the model using train_diffusion.py on GPU")
-    print("2. Load checkpoint from:", checkpoint_path if checkpoint_path else "outputs/hmong-pattern-lora")
-    print("3. Run inference with Stable Diffusion pipeline")
+    print(f"\n🚀 Initializing Generation Pipeline...")
+    print(f"   Base Model: {base_model}")
+    print(f"   Checkpoint: {checkpoint_path}")
     
-    print(f"\n📝 Generation Request:")
-    print(f"   Prompt: {prompt}")
-    print(f"   Motifs: {motifs}")
-    print(f"   Colors: {colors}")
-    print(f"   Samples: {num_samples}")
-    
-    print("\n💡 To actually generate:")
-    print("   1. Upload repository to Google Colab")
-    print("   2. Train model (8-12 hours on A100)")
-    print("   3. Replace this placeholder with working implementation")
-    
-    # Would normally do:
-    """
-    from diffusers import StableDiffusionPipeline
-    import torch
-    
-    pipe = StableDiffusionPipeline.from_pretrained(
-        "stabilityai/stable-diffusion-2-1-base",
-        torch_dtype=torch.float16
-    )
-    pipe.load_lora_weights(checkpoint_path)
-    pipe = pipe.to("cuda")
-    
-    # Build conditioning from cultural constraints
-    full_prompt = f"{prompt}, Hmong traditional pattern"
-    if motifs:
-        full_prompt += f", with {', '.join(motifs)} motifs"
-    if colors:
-        full_prompt += f", in {', '.join(colors)} colors"
-    
-    images = pipe(
-        prompt=[full_prompt] * num_samples,
-        num_inference_steps=50,
-        guidance_scale=7.5
-    ).images
-    
-    # Save images
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    for i, img in enumerate(images):
-        img.save(output_path / f"generated_{i:04d}.png")
-    """
-    
-    return []
+    # Setup Device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    print(f"   Device: {device} ({dtype})")
+
+    try:
+        # Load Pipeline
+        # Disable safety checker to avoid flagging abstract patterns
+        pipe = StableDiffusionPipeline.from_pretrained(
+            base_model,
+            torch_dtype=dtype,
+            safety_checker=None
+        )
+        
+        # Load LoRA Weights
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            print(f"   Loading LoRA weights from {checkpoint_path}...")
+            pipe.load_lora_weights(checkpoint_path)
+        else:
+            print(f"⚠️ Warning: Checkpoint not found at {checkpoint_path}. Using base model only.")
+
+        pipe = pipe.to(device)
+
+        # Construct Full Prompt
+        full_prompt = f"{prompt}, Hmong traditional pattern style, intricate geometric textile design, vectors, high quality"
+        
+        if motifs:
+            if isinstance(motifs, list):
+                motif_str = ", ".join(motifs)
+            else:
+                motif_str = str(motifs)
+            full_prompt += f", featuring {motif_str} motifs"
+        
+        if colors:
+            if isinstance(colors, list):
+                color_str = ", ".join(colors)
+            else:
+                color_str = str(colors)
+            full_prompt += f", color scheme: {color_str}"
+
+        # Negative Prompt
+        negative_prompt = "blurry, low quality, distorted, watermark, text, signature, realistic photo, human face"
+
+        print(f"\n🎨 Generating {num_samples} samples...")
+        print(f"   Prompt: {full_prompt}")
+
+        # Generate
+        images = pipe(
+            prompt=[full_prompt] * num_samples,
+            negative_prompt=[negative_prompt] * num_samples,
+            num_inference_steps=30,
+            guidance_scale=7.5,
+        ).images
+
+        # Save Images
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        saved_paths = []
+        for i, img in enumerate(images):
+            filename = f"generated_hmong_{i+1:03d}.png"
+            save_dest = output_path / filename
+            img.save(save_dest)
+            saved_paths.append(str(save_dest))
+            print(f"   ✅ Saved: {save_dest}")
+            
+        print(f"\n✨ Generation Complete! {len(saved_paths)} images saved to {output_dir}")
+        return saved_paths
+
+    except Exception as e:
+        print(f"\n❌ Error during generation: {str(e)}")
+        # import traceback
+        # traceback.print_exc()
+        return []
 
 
 def main():
