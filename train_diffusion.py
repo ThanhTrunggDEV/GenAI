@@ -9,6 +9,10 @@ import argparse
 import logging
 import math
 import os
+
+# Fix for OMP: Error #15 on Windows
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import random
 import shutil
 from pathlib import Path
@@ -52,7 +56,7 @@ logger = get_logger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
-    parser.add_argument("--pretrained_model_name_or_path", type=str, default="stabilityai/stable-diffusion-2-1-base")
+    parser.add_argument("--pretrained_model_name_or_path", type=str, default="runwayml/stable-diffusion-v1-5")
     parser.add_argument("--output_dir", type=str, default="outputs/hmong-pattern-lora")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--resolution", type=int, default=512)
@@ -201,17 +205,15 @@ def main():
             if step % 100 == 0:
                 print(f"Epoch {epoch}, Step {step}, Loss: {loss.detach().item()}")
                 
-    # Save
+    # Save LoRA weights only
     if accelerator.is_main_process:
-        pipeline = DiffusionPipeline.from_pretrained(
-            args.pretrained_model_name_or_path,
-            text_encoder=text_encoder,
-            vae=vae,
-            unet=accelerator.unwrap_model(unet),
-            scheduler=noise_scheduler,
-        )
-        pipeline.save_pretrained(args.output_dir)
-        print(f"Model saved to {args.output_dir}")
+        # Unwrap the model to get the PeftModel
+        unwrapped_unet = accelerator.unwrap_model(unet)
+        
+        # Save only the LoRA adapters
+        unwrapped_unet.save_pretrained(args.output_dir)
+        
+        print(f"LoRA adapters saved to {args.output_dir}")
 
 if __name__ == "__main__":
     main()
