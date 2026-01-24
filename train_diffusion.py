@@ -171,6 +171,10 @@ def main():
 
     # Enable gradient checkpointing to save memory
     unet.enable_gradient_checkpointing()
+    
+    # Enable VAE slicing and tiling for lower memory usage
+    vae.enable_slicing()
+    vae.enable_tiling()
 
     # Use LoRA for memory efficiency (Fixes OOM on 12GB cards)
     unet.requires_grad_(False)
@@ -246,47 +250,54 @@ def main():
                 # -------------------
                 
                 # 1. Decode latents to get approximated images (for cultural loss)
-                # Equation: x_0 = (x_t - sqrt(1-alpha_bar)*epsilon) / sqrt(alpha_bar)
-                # Note: This is an approximation. For exact x_0, we should use the scheduler's step function,
-                # but valid analytical inversion is faster for loss computation.
+                # OPTIMIZATION: Decode only a subset of the batch to save memory
+                # or only decode every N steps
                 
-                alpha_prod_t = noise_scheduler.alphas_cumprod[steps]
-                beta_prod_t = 1 - alpha_prod_t
+                # Only compute cultural loss for the first item in the batch to save memory
+                # This significantly reduces VRAM usage while still providing guidance
                 
-                # Reshape alphas for broadcasting (B, 1, 1, 1)
-                alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1)
-                beta_prod_t = beta_prod_t.view(-1, 1, 1, 1)
+                with torch.no_grad():
+                    alpha_prod_t = noise_scheduler.alphas_cumprod[steps]
+                    beta_prod_t = 1 - alpha_prod_t
+                    
+                    # Reshape alphas for broadcasting (B, 1, 1, 1)
+                    alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1)
+                    beta_prod_t = beta_prod_t.view(-1, 1, 1, 1)
+                    
+                    # Predict original latents (x_0)
+                    pred_original_latents = (noisy_latents - beta_prod_t.sqrt() * model_pred) / alpha_prod_t.sqrt()
+                    pred_original_latents = pred_original_latents / vae.config.scaling_factor
                 
-                # Predict original latents (x_0)
-                pred_original_latents = (noisy_latents - beta_prod_t.sqrt() * model_pred) / alpha_prod_t.sqrt()
+                # Slicing: Only decode first N images if batch is large
+                # For batch_size=4, maybe only decode 1 or 2
+                max_decode_batch = 1 
                 
-                # Decode to pixel space
-                # VAE decoding is heavy, we might want to do this less frequently or with gradients
-                # To save memory/time, maybe only compute this part of loss every N steps?
-                # For now, we compute it every step but be mindful of OOM.
+                pred_images_subset = vae.decode(pred_original_latents[:max_decode_batch].to(dtype=vae.dtype)).sample
                 
-                pred_original_latents = pred_original_latents / vae.config.scaling_factor
-                pred_images = vae.decode(pred_original_latents.to(dtype=vae.dtype)).sample
-                
-                # Get targets
+                # Get targets subset
                 target_metadata = batch.get("cultural_embeddings", None)
+                if target_metadata is not None:
+                    target_metadata_subset = target_metadata[:max_decode_batch]
+                else:
+                    target_metadata_subset = None
                 
                 # Compute combined loss
-                loss, loss_dict = cultural_loss_fn(
-                    predicted_noise=model_pred.float(), 
-                    actual_noise=noise.float(),
-                    generated_images=pred_images,
-                    target_metadata=target_metadata
-                )
+                # We need to handle the mismatch in batch size between diff loss and cultural loss
+                loss_diffusion = F.mse_loss(model_pred.float(), noise.float(), reduction="mean")
                 
-                accelerator.backward(loss)
+                loss_cultural = torch.tensor(0.0, device=accelerator.device)
+                if target_metadata_subset is not None:
+                     loss_cultural = cultural_loss_fn.cultural_loss(pred_images_subset, target_metadata_subset)
+                
+                total_loss = loss_diffusion + 0.3 * loss_cultural
+                
+                accelerator.backward(total_loss)
                 optimizer.step()
                 optimizer.zero_grad()
             
             if step % 100 == 0:
-                print(f"Epoch {epoch}, Step {step}, Loss: {loss.detach().item()}")
-                if 'cultural' in loss_dict:
-                    print(f"   Diff: {loss_dict['diffusion']:.4f}, Cultural: {loss_dict['cultural']:.4f}")
+                print(f"Epoch {epoch}, Step {step}, Loss: {total_loss.detach().item()}")
+                print(f"   Diff: {loss_diffusion.item():.4f}, Cultural: {loss_cultural.item():.4f}")
                 
     # Save LoRA weights only
     if accelerator.is_main_process:
