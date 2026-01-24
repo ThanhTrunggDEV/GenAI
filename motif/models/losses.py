@@ -10,34 +10,80 @@ import torch.nn.functional as F
 import numpy as np
 from pathlib import Path
 
+
+from .visual_encoder import HmongVisualEncoder
+
 class CulturalConsistencyLoss(nn.Module):
     """
     Loss to enforce cultural consistency between generated and real patterns
     Compares cultural embeddings
     """
     
-    def __init__(self, cultural_encoder):
+    def __init__(self, cultural_encoder, visual_encoder=None):
         super().__init__()
         self.cultural_encoder = cultural_encoder
-        self.kl_loss = nn.KLDivLoss(reduction='batchmean')
+        
+        # Use provided visual encoder or create new one matching cultural dim
+        if visual_encoder:
+            self.visual_encoder = visual_encoder
+        else:
+            # Initialize with same embedding dim as cultural encoder
+            # Default cultural dim is 256
+            emb_dim = getattr(cultural_encoder, 'embedding_dim', 256)
+            self.visual_encoder = HmongVisualEncoder(embedding_dim=emb_dim, pretrained=True)
+            
+        # Freeze visual encoder parameters to avoid "chasing a moving target"
+        for param in self.visual_encoder.parameters():
+            param.requires_grad = False
+            
+        self.cosine_loss = nn.CosineEmbeddingLoss()
     
     def forward(self, generated_images, target_metadata):
         """
         Args:
-            generated_images: Generated pattern images
-            target_metadata: Target cultural metadata
+            generated_images: Generated pattern images (B, C, H, W). Assumed to be in [-1, 1] range.
+            target_metadata: Target cultural embeddings (B, dim)
         Returns:
             loss: Cultural consistency loss
         """
-        # Extract cultural features from generated images
-        # (This would require a reverse encoder - simplified for now)
+        # 1. Denormalize from [-1, 1] to [0, 1] (assuming diffusion output is [-1, 1])
+        # Clone to avoid modifying original tensor if used elsewhere
+        images = (generated_images.clone() + 1.0) * 0.5
+        images = torch.clamp(images, 0.0, 1.0) # Ensure within bounds
         
-        # For now, use KL divergence on metadata embeddings
-        # In practice, you'd extract features from generated images
+        # 2. Resize images for visual encoder (224x224)
+        if images.shape[-2:] != (224, 224):
+            images_resized = F.interpolate(
+                images, 
+                size=(224, 224), 
+                mode='bilinear', 
+                align_corners=False
+            )
+        else:
+            images_resized = images
         
-        # Placeholder: return zero loss
-        # Real implementation would compare embeddings
-        return torch.tensor(0.0, device=generated_images.device)
+        # 3. Normalize for ImageNet backbone (ResNet expectation)
+        # ImageNet mean and std
+        mean = torch.tensor([0.485, 0.456, 0.406], device=images.device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=images.device).view(1, 3, 1, 1)
+        
+        images_normalized = (images_resized - mean) / std
+            
+        # 4. Extract visual embeddings
+        # We assume generated_images has gradients enabling backprop
+        self.visual_encoder.eval()
+        visual_emb = self.visual_encoder(images_normalized)
+        
+        # 5. Get target embeddings 
+        # Assume target_metadata is already the tensor embedding
+        target_emb = target_metadata
+            
+        # 6. Compute Cosine Similarity Loss
+        # We want vectors to be similar (target=1)
+        target = torch.ones(visual_emb.shape[0], device=visual_emb.device)
+        loss = self.cosine_loss(visual_emb, target_emb, target)
+        
+        return loss
 
 
 class ColorPaletteLoss(nn.Module):

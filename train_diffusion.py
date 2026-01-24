@@ -47,10 +47,14 @@ from transformers import CLIPTextModel, CLIPTokenizer
 # For Kaggle/Colab, we might need to adjust python path or install the package
 try:
     from motif.models.combine_embeddings import CombinedEmbedding
+    from motif.models.losses import CombinedLoss
+    from motif.models.cultural_encoder import CulturalSemanticEncoder
 except ImportError:
     import sys
     sys.path.append(".")
     from motif.models.combine_embeddings import CombinedEmbedding
+    from motif.models.losses import CombinedLoss
+    from motif.models.cultural_encoder import CulturalSemanticEncoder
 
 logger = get_logger(__name__)
 
@@ -81,7 +85,29 @@ class HmongPatternDataset(Dataset):
         # Lists
         self.images = sorted(list((self.data_root / "images").glob("*.jpg")))
         self.captions_dir = self.data_root / "captions"
-        self.embeddings_dir = self.data_root / "embeddings" # Assumed pre-computed
+        
+        # Load cultural embeddings from .npz
+        # Assuming embeddings are in dataset/embeddings/cultural_embeddings.npz relative to workspace
+        # or in data_root/embeddings/cultural_embeddings.npz
+        emb_path = self.data_root.parent.parent / "embeddings" / "cultural_embeddings.npz"
+        if not emb_path.exists():
+            emb_path = Path("dataset/embeddings/cultural_embeddings.npz")
+            
+        self.cultural_embeddings = {}
+        if emb_path.exists():
+            try:
+                data = np.load(emb_path)
+                filenames = data['filenames']
+                embeddings = data['embeddings']
+                # Create map: stem -> embedding
+                for f, emb in zip(filenames, embeddings):
+                    stem = Path(f).stem
+                    self.cultural_embeddings[stem] = torch.from_numpy(emb)
+                print(f"Loaded {len(self.cultural_embeddings)} cultural embeddings from {emb_path}")
+            except Exception as e:
+                print(f"Error loading cultural embeddings: {e}")
+        else:
+            print(f"Warning: Cultural embeddings not found at {emb_path}")
         
         self.transforms = transforms.Compose([
             transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
@@ -114,6 +140,13 @@ class HmongPatternDataset(Dataset):
         example["input_ids"] = self.tokenizer(
             caption, max_length=self.tokenizer.model_max_length, padding="max_length", truncation=True, return_tensors="pt"
         ).input_ids
+        
+        # Internal cultural embeddings
+        if image_path.stem in self.cultural_embeddings:
+            example["cultural_embeddings"] = self.cultural_embeddings[image_path.stem]
+        else:
+            # Placeholder/Zero embedding if missing (dim=256 default)
+            example["cultural_embeddings"] = torch.zeros(256)
         
         return example
 
@@ -167,6 +200,18 @@ def main():
     vae.to(accelerator.device)
     text_encoder.to(accelerator.device)
     
+    # Initialize Cultural Loss
+    # We initialize it with a dummy encoder or just default settings
+    # The loss will internally create the visual encoder
+    cultural_encoder = CulturalSemanticEncoder(embedding_dim=256)
+    cultural_loss_fn = CombinedLoss(
+        cultural_encoder=cultural_encoder,
+        lambda_diffusion=1.0,
+        lambda_cultural=0.3, # Adjust weight as needed
+        lambda_color=0.0 # Disable color loss for now or enable if needed
+    )
+    cultural_loss_fn.to(accelerator.device)
+    
     # Train!
     print("***** Starting training *****")
     print(f"  Num examples = {len(dataset)}")
@@ -196,7 +241,43 @@ def main():
                 # Predict noise
                 model_pred = unet(noisy_latents, steps, encoder_hidden_states).sample
 
-                loss = F.mse_loss(model_pred.float(), noise.float(), reduction="mean")
+                # -------------------
+                # Compute Loss
+                # -------------------
+                
+                # 1. Decode latents to get approximated images (for cultural loss)
+                # Equation: x_0 = (x_t - sqrt(1-alpha_bar)*epsilon) / sqrt(alpha_bar)
+                # Note: This is an approximation. For exact x_0, we should use the scheduler's step function,
+                # but valid analytical inversion is faster for loss computation.
+                
+                alpha_prod_t = noise_scheduler.alphas_cumprod[steps]
+                beta_prod_t = 1 - alpha_prod_t
+                
+                # Reshape alphas for broadcasting (B, 1, 1, 1)
+                alpha_prod_t = alpha_prod_t.view(-1, 1, 1, 1)
+                beta_prod_t = beta_prod_t.view(-1, 1, 1, 1)
+                
+                # Predict original latents (x_0)
+                pred_original_latents = (noisy_latents - beta_prod_t.sqrt() * model_pred) / alpha_prod_t.sqrt()
+                
+                # Decode to pixel space
+                # VAE decoding is heavy, we might want to do this less frequently or with gradients
+                # To save memory/time, maybe only compute this part of loss every N steps?
+                # For now, we compute it every step but be mindful of OOM.
+                
+                pred_original_latents = pred_original_latents / vae.config.scaling_factor
+                pred_images = vae.decode(pred_original_latents.to(dtype=vae.dtype)).sample
+                
+                # Get targets
+                target_metadata = batch.get("cultural_embeddings", None)
+                
+                # Compute combined loss
+                loss, loss_dict = cultural_loss_fn(
+                    predicted_noise=model_pred.float(), 
+                    actual_noise=noise.float(),
+                    generated_images=pred_images,
+                    target_metadata=target_metadata
+                )
                 
                 accelerator.backward(loss)
                 optimizer.step()
@@ -204,6 +285,8 @@ def main():
             
             if step % 100 == 0:
                 print(f"Epoch {epoch}, Step {step}, Loss: {loss.detach().item()}")
+                if 'cultural' in loss_dict:
+                    print(f"   Diff: {loss_dict['diffusion']:.4f}, Cultural: {loss_dict['cultural']:.4f}")
                 
     # Save LoRA weights only
     if accelerator.is_main_process:
