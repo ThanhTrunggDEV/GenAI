@@ -38,48 +38,60 @@ class CulturalConsistencyLoss(nn.Module):
             
         self.cosine_loss = nn.CosineEmbeddingLoss()
     
-    def forward(self, generated_images, target_metadata):
+    def forward(self, generated_images, target_metadata=None, target_images=None):
         """
         Args:
             generated_images: Generated pattern images (B, C, H, W). Assumed to be in [-1, 1] range.
-            target_metadata: Target cultural embeddings (B, dim)
+            target_metadata: Target cultural embeddings (B, dim) (Optional)
+            target_images: Target real images (B, C, H, W) (Optional)
         Returns:
             loss: Cultural consistency loss
         """
-        # 1. Denormalize from [-1, 1] to [0, 1] (assuming diffusion output is [-1, 1])
-        # Clone to avoid modifying original tensor if used elsewhere
+        # 1. Denormalize from [-1, 1] to [0, 1]
         images = (generated_images.clone() + 1.0) * 0.5
-        images = torch.clamp(images, 0.0, 1.0) # Ensure within bounds
+        images = torch.clamp(images, 0.0, 1.0)
         
-        # 2. Resize images for visual encoder (224x224)
-        if images.shape[-2:] != (224, 224):
-            images_resized = F.interpolate(
-                images, 
-                size=(224, 224), 
-                mode='bilinear', 
-                align_corners=False
-            )
-        else:
-            images_resized = images
-        
-        # 3. Normalize for ImageNet backbone (ResNet expectation)
-        # ImageNet mean and std
+        # 2. Resize and Normalize for Visual Encoder
         mean = torch.tensor([0.485, 0.456, 0.406], device=images.device).view(1, 3, 1, 1)
         std = torch.tensor([0.229, 0.224, 0.225], device=images.device).view(1, 3, 1, 1)
         
+        if images.shape[-2:] != (224, 224):
+            images_resized = F.interpolate(images, size=(224, 224), mode='bilinear', align_corners=False)
+        else:
+            images_resized = images
+            
         images_normalized = (images_resized - mean) / std
             
-        # 4. Extract visual embeddings
-        # We assume generated_images has gradients enabling backprop
+        # 3. Extract visual embeddings for Generated Images
         self.visual_encoder.eval()
         visual_emb = self.visual_encoder(images_normalized)
         
-        # 5. Get target embeddings 
-        # Assume target_metadata is already the tensor embedding
-        target_emb = target_metadata
+        # 4. Determine Target Embeddings
+        # ARIORITIZE target_images (Perceptual Loss) over target_metadata
+        # because visual_encoder is likely not aligned with cultural_metadata space yet.
+        
+        if target_images is not None:
+            # Feature matching with Real Images
+            with torch.no_grad():
+                # Process target images exactly like generated ones
+                t_images = (target_images.clone() + 1.0) * 0.5
+                t_images = torch.clamp(t_images, 0.0, 1.0)
+                
+                if t_images.shape[-2:] != (224, 224):
+                    t_images_resized = F.interpolate(t_images, size=(224, 224), mode='bilinear', align_corners=False)
+                else:
+                    t_images_resized = t_images
+                
+                t_images_normalized = (t_images_resized - mean) / std
+                target_emb = self.visual_encoder(t_images_normalized)
+                
+        elif target_metadata is not None:
+            # Fallback to metadata matching (only works if encoders are aligned)
+            target_emb = target_metadata
+        else:
+            return torch.tensor(0.0, device=generated_images.device)
             
-        # 6. Compute Cosine Similarity Loss
-        # We want vectors to be similar (target=1)
+        # 5. Compute Cosine Similarity Loss
         target = torch.ones(visual_emb.shape[0], device=visual_emb.device)
         loss = self.cosine_loss(visual_emb, target_emb, target)
         
@@ -175,10 +187,19 @@ class CombinedLoss(nn.Module):
         loss_dict = {'diffusion': loss_diffusion.item()}
         
         # Cultural consistency loss (if applicable)
-        if self.cultural_loss is not None and generated_images is not None and target_metadata is not None:
-            loss_cultural = self.cultural_loss(generated_images, target_metadata)
-            total_loss += self.lambda_cultural * loss_cultural
-            loss_dict['cultural'] = loss_cultural.item()
+        if self.cultural_loss is not None:
+             # Logic to determine arguments for cultural loss
+             # We can pass target_images (real images) as reference for visual consistency
+             # Or target_metadata if we trust the alignment
+             
+             # Prioritize passing target_images if available to enable Perceptual Loss
+             c_loss = self.cultural_loss(
+                 generated_images, 
+                 target_metadata=target_metadata,
+                 target_images=target_images
+             )
+             total_loss += self.lambda_cultural * c_loss
+             loss_dict['cultural'] = c_loss.item()
         
         # Color palette loss (if applicable)
         if generated_images is not None and target_images is not None:

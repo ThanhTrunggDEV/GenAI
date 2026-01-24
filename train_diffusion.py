@@ -286,8 +286,18 @@ def main():
                 loss_diffusion = F.mse_loss(model_pred.float(), noise.float(), reduction="mean")
                 
                 loss_cultural = torch.tensor(0.0, device=accelerator.device)
+                
                 if target_metadata_subset is not None:
-                     loss_cultural = cultural_loss_fn.cultural_loss(pred_images_subset, target_metadata_subset)
+                     # Get corresponding real images for this subset
+                     target_images_subset = batch["pixel_values"][:max_decode_batch]
+                     
+                     # Calculate cultural loss (now acts as perceptual/feature consistency loss)
+                     # We pass both metadata AND target images
+                     loss_cultural = cultural_loss_fn.cultural_loss(
+                         pred_images_subset, 
+                         target_metadata=target_metadata_subset,
+                         target_images=target_images_subset
+                     )
                 
                 total_loss = loss_diffusion + 0.3 * loss_cultural
                 
