@@ -76,31 +76,31 @@ See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed instructions.
 ```
 GenAI/
 ├── dataset/
-│   ├── to_annotate/        # 45 original images
-│   ├── metadata/           # 45 JSON annotations
-│   ├── augmented/          # 225 augmented images
+│   ├── augmented/          # Augmented images (225 images)
+│   ├── embeddings/         # Cached embeddings (.npz)
+│   ├── metadata/           # JSON annotations (45 files)
+│   ├── to_annotate/        # Original images (45 images)
 │   └── training/           # Train/val/test splits
+├── docs/                   # Documentation
 ├── motif/
 │   ├── core/               # Pattern extraction logic
 │   ├── data/               # Data processing & augmentation tools
-│   ├── models/
-│   │   ├── visual_encoder.py    # Stage 1: Visual features
-│   │   ├── cultural_encoder.py  # Stage 1: Cultural metadata
-│   │   ├── combine_embeddings.py # Stage 1: Combined embedding
-│   │   └── losses.py            # Stage 2: Custom loss functions
-│   ├── pipeline/
-│   │   ├── evaluate.py
-│   │   └── generate.py
-│   ├── validators/              # Stage 3: Constraint checkers
-│   └── visualization/
-│       └── create_demo.py
-├── run_full_pipeline.py         # Main automation script
-├── train_diffusion.py           # Training script
-├── config.yaml                  # Training config
-├── requirements.txt             # Dependencies
-├── docs/                        # Documentation
-├── demo_viewer.html             # Interactive demo
-└── README.md                    # This file
+│   ├── models/             # Encoders & loss functions
+│   ├── pipeline/           # Inference & evaluation scripts
+│   ├── validators/         # Stage 3 constraint checkers
+│   └── visualization/      # Demo generators
+├── outputs/                # Generated patterns & LoRA weights
+├── static/                 # Web app assets
+├── templates/              # Web app templates
+├── app.py                  # Web interface application
+├── config.yaml             # Training configuration
+├── demo_viewer.html        # Interactive dataset viewer
+├── evaluation_results.json # Metrics and results
+├── Kaggle_Training.ipynb   # Notebook for cloud training
+├── README.md               # This file
+├── requirements.txt        # Python dependencies
+├── run_full_pipeline.py    # Main automation script
+└── train_diffusion.py      # Diffusion training script
 ```
 
 ---
