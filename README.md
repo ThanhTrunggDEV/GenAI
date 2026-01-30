@@ -11,6 +11,7 @@ Generate culturally-authentic Hmong textile patterns using AI while preserving t
 ## ✅ Completed Components
 
 ### 📊 Dataset (100% Complete)
+- Dataset is available at [Link](https://drive.google.com/drive/folders/1jrXWCb3cM6R7wKvZK3BG7nXuWAcufJau?usp=sharing)
 - ✅ **45** original Hmong patterns with full metadata
 - ✅ **225** augmented images (5x multiplication)
 - ✅ **Training splits**: 157 train / 34 val / 34 test
@@ -166,29 +167,13 @@ Input (Photos) → Stage 1 (Encoding) → Stage 2 (Generation) → Stage 3 (Vali
 
 ---
 
-## � License
-
-This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** license.
-See the [LICENSE](LICENSE) file for details.
-
-You are free to:
-- **Share** — copy and redistribute the material in any medium or format.
-- **Adapt** — remix, transform, and build upon the material.
-
-Under the following terms:
-- **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
-- **NonCommercial** — You may not use the material for commercial purposes.
-- **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
-
----
-
-## �📧 Citation & Contact
+## 📧 Citation & Contact
 
 If you use this work:
 ```
 @misc{hmong-pattern-ai-2026,
   title={Culturally-Constrained Generative AI for Hmong Textile Patterns},
-  author={[Nguyễn Thành Trung, Hoàng Mạnh Cường, Lưu Thế Hà, Nguyễn Đại Hoàng, Nguyễn Mạnh Hùng, Bùi Thu Hương]},
+  author={[Your Name]},
   year={2026},
   publisher={GitHub},
   url={https://github.com/ThanhTrunggDEV/GenAI}
