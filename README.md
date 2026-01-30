@@ -11,6 +11,7 @@ Generate culturally-authentic Hmong textile patterns using AI while preserving t
 ## ✅ Completed Components
 
 ### 📊 Dataset (100% Complete)
+- Link to the dataset: [Link](https://drive.google.com/drive/folders/1jrXWCb3cM6R7wKvZK3BG7nXuWAcufJau?usp=sharing)
 - ✅ **45** original Hmong patterns with full metadata
 - ✅ **225** augmented images (5x multiplication)
 - ✅ **Training splits**: 157 train / 34 val / 34 test
