@@ -189,7 +189,7 @@ If you use this work:
 ```
 @misc{hmong-pattern-ai-2026,
   title={Culturally-Constrained Generative AI for Hmong Textile Patterns},
-  author={[Nguyễn Thành Trung, Hoàng Mạnh Cường, Lưu Thế Hà, Nguyễn Đại Hoàng, Nguyễn Mạnh Hùng, Bùi Thu Hương]},
+  author={[Nguyễn Thành Trung and Hoàng Mạnh Cường and Lưu Thế Hà and Nguyễn Đại Hoàng and Nguyễn Mạnh Hùng and Bùi Thu Hương]},
   year={2026},
   publisher={GitHub},
   url={https://github.com/ThanhTrunggDEV/GenAI}
