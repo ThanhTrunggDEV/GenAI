@@ -130,8 +130,8 @@ The batch annotation system employs:
 
 ### Current Dataset (v1.0)
 
-- **Total Images**: 45
-- **Annotated Samples**: 45 (100%)
+- **Total Images**: 55
+- **Annotated Samples**: 55 (100%)
 - **Annotation Method**: AI-assisted batch processing
 - **Quality Level**: Base annotations with detailed analysis for 7 samples
 

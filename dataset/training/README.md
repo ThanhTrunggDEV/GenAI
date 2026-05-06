@@ -2,23 +2,23 @@
 
 ## Dataset Statistics
 
-- **Total Images**: 225
-- **Train**: 157  
-- **Validation**: 33
-- **Test**: 35
+- **Total Images**: 275
+- **Train**: 193  
+- **Validation**: 41 
+- **Test**: 41
 
 ## Structure
 
 ```
 training/
 ├── train/
-│   ├── images/      # 157 training images
+│   ├── images/      # 193 training images
 │   └── captions.txt # Image-caption pairs
 ├── val/
-│   ├── images/      # 33 validation images
+│   ├── images/      # 41 validation images
 │   └── captions.txt
 └── test/
-    ├── images/      # 35 test images
+    ├── images/      # 41 test images
     └── captions.txt
 ```
 
