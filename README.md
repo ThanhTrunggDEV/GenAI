@@ -13,8 +13,8 @@ Generate culturally-authentic Hmong textile patterns using AI while preserving t
 ### 📊 Dataset (100% Complete)
 - Link to the dataset: [Link](https://drive.google.com/drive/folders/1jrXWCb3cM6R7wKvZK3BG7nXuWAcufJau?usp=sharing)
 - ✅ **55** original Hmong patterns with full metadata
-- ✅ **275** augmented images (5x multiplication)
-- ✅ **Training splits**: 193 train / 41 val / 41 test
+- ✅ **550** augmented images (10x multiplication)
+- ✅ **Training splits**: 386 train / 82 val / 82 test
 - ✅ **Auto-generated captions** for all images
 - ✅ **Demo web viewer** (`demo_viewer.html`)
 
@@ -77,7 +77,7 @@ See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed instructions.
 ```
 GenAI/
 ├── dataset/
-│   ├── augmented/          # Augmented images (275 images)
+│   ├── augmented/          # Augmented images (550 images)
 │   ├── embeddings/         # Cached embeddings (.npz)
 │   ├── metadata/           # JSON annotations (55 files)
 │   ├── to_annotate/        # Original images (55 images)
@@ -122,10 +122,10 @@ Input (Photos) → Stage 1 (Encoding) → Stage 2 (Generation) → Stage 3 (Vali
 | Metric | Value |
 |--------|-------|
 | Original Patterns | 55 |
-| Augmented Dataset | 275 |
-| Training Images | 193 |
-| Validation Images | 41 |
-| Test Images | 41 |
+| Augmented Dataset | 550 |
+| Training Images | 386 |
+| Validation Images | 82 |
+| Test Images | 82 |
 | Metadata Files | 270 |
 | Unique Motifs | 25+ |
 | Color Palette | 11 colors |

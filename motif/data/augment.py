@@ -6,7 +6,7 @@ Generates variations while preserving cultural integrity
 """
 
 import json
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 from pathlib import Path
 import shutil
 
@@ -45,6 +45,38 @@ def augment_image(image_path, output_dir):
     path_hflip = output_dir / f"{image_id}_hflip.jpg"
     img_hflip.save(path_hflip, quality=95)
     augmentations.append(("flip_horizontal", path_hflip))
+    
+    # Vertical flip
+    img_vflip = img.transpose(Image.FLIP_TOP_BOTTOM)
+    path_vflip = output_dir / f"{image_id}_vflip.jpg"
+    img_vflip.save(path_vflip, quality=95)
+    augmentations.append(("flip_vertical", path_vflip))
+    
+    # Crop and Zoom (Center crop 20% and resize back)
+    w, h = img.size
+    left, top, right, bottom = w * 0.1, h * 0.1, w * 0.9, h * 0.9
+    img_crop = img.crop((left, top, right, bottom)).resize((w, h), Image.Resampling.LANCZOS)
+    path_crop = output_dir / f"{image_id}_crop_zoom.jpg"
+    img_crop.save(path_crop, quality=95)
+    augmentations.append(("crop_zoom", path_crop))
+    
+    # Desaturation (Color Fading)
+    img_desat = ImageEnhance.Color(img).enhance(0.4)
+    path_desat = output_dir / f"{image_id}_desaturated.jpg"
+    img_desat.save(path_desat, quality=95)
+    augmentations.append(("desaturated", path_desat))
+    
+    # Brightness Jitter
+    img_bright = ImageEnhance.Brightness(img).enhance(1.3)
+    path_bright = output_dir / f"{image_id}_brightness.jpg"
+    img_bright.save(path_bright, quality=95)
+    augmentations.append(("brightness_jitter", path_bright))
+    
+    # Gaussian Blur (Heritage aging simulation)
+    img_blur = img.filter(ImageFilter.GaussianBlur(radius=1.2))
+    path_blur = output_dir / f"{image_id}_blur.jpg"
+    img_blur.save(path_blur, quality=95)
+    augmentations.append(("gaussian_blur", path_blur))
     
     return augmentations
 
