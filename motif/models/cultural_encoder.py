@@ -200,7 +200,7 @@ if __name__ == "__main__":
     print(f"✅ Encoding test: metadata → {embedding.shape}")
     
     # Extract from training metadata
-    metadata_dir = Path("dataset/training/train").parent.parent / "metadata"
+    metadata_dir = Path("dataset/augmented/metadata")
     if metadata_dir.exists():
         output_path = "dataset/embeddings/cultural_embeddings.npz"
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)

@@ -152,7 +152,7 @@ if __name__ == "__main__":
     print(f"✅ Forward pass: {sample_input.shape} → {output.shape}")
     
     # Extract features from training images
-    dataset_dir = Path("dataset/training/train/images")
+    dataset_dir = Path("dataset/augmented/images")
     if dataset_dir.exists():
         output_path = "dataset/embeddings/visual_embeddings.npz"
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
