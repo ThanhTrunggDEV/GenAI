@@ -6,47 +6,61 @@
   "location": {
     "province": "Lao Cai",
     "district": "Sapa",
-    "village": "Cat Cat",
+    "village": "Unknown",
     "region": "Northwest Vietnam"
   },
   "ethnic_info": {
-    "subgroup": "Black Hmong",
+    "subgroup": "Hmong",
     "local_name": ""
   },
   "pattern_info": {
-    "collection": "traditional",
-    "is_authentic": true,
-    "confidence_score": 0.95
+    "motif_type": [
+      "geometric"
+    ],
+    "specific_motifs": [
+      "spiral",
+      "mountain",
+      "seed"
+    ],
+    "dominant_motif": "spiral"
   },
-  "visual_features": {
-    "dominant_colors": [
+  "color_info": {
+    "colors": [
       "black",
       "indigo",
       "white"
     ],
-    "background_color": "black",
-    "symmetry": "radial",
-    "geometric_shapes": [
-      "spiral",
-      "triangle",
-      "diamond"
-    ],
-    "complexity_level": "high",
-    "border_type": "continuous"
+    "dominant_color": "indigo",
+    "color_scheme": "traditional"
   },
   "cultural_meaning": {
-    "motifs": [
-      "snail shell",
-      "mountain",
-      "seed"
+    "symbolism": "Connection to nature and endurance",
+    "ritual_use": "unknown",
+    "significance": "High"
+  },
+  "technique": {
+    "primary_technique": "batik",
+    "tools_used": [
+      "beeswax"
     ],
-    "symbolism": "Connection to nature, endurance, and agricultural cycles",
-    "usage": [
-      "clothing border",
-      "skirt",
-      "baby carrier"
-    ],
-    "gender_association": "female",
-    "ritual_usage": []
-  }
+    "material": "hemp"
+  },
+  "visual_structure": {
+    "symmetry": "radial",
+    "repetition": "continuous",
+    "complexity": "high"
+  },
+  "quality": {
+    "resolution": "high",
+    "clarity": "high",
+    "completeness": "full pattern",
+    "condition": "traditional"
+  },
+  "date_info": {
+    "photo_date": "2026-05-06",
+    "estimated_creation": "contemporary",
+    "annotation_date": "2026-05-06",
+    "annotator": "manual"
+  },
+  "notes": "Added to expand dataset for generalization"
 }
