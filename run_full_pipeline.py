@@ -31,13 +31,14 @@ def main():
     
     # Check if dataset exists
     if not Path("dataset/training/train/images").exists():
-        print("\n❌ Dataset not found!")
-        print("Run data preparation first:")
-        print("  python -m motif.data.augment")
-        print("  python -m motif.data.prepare")
-        return
+        print("\n⚠️ Dataset not found! Running data augmentation and preparation automatically...")
+        if not run_command([sys.executable, "-m", "motif.data.augment"], "Data Augmentation (10x)"):
+            return
+        if not run_command([sys.executable, "-m", "motif.data.prepare"], "Dataset Split (Train/Val/Test)"):
+            return
     
     print("\n📋 Pipeline Steps:")
+    print("0. Prepare and Augment Dataset")
     print("1. Extract visual embeddings")
     print("2. Extract cultural embeddings")
     print("3. Combine embeddings")
