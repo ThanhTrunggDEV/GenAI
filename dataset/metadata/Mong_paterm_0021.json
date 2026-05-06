@@ -1,0 +1,52 @@
+{
+  "image_id": "Mong_paterm_0021",
+  "filename": "Mong_paterm_0021.jpg",
+  "source": "illustration",
+  "source_url": "",
+  "location": {
+    "province": "Lao Cai",
+    "district": "Sapa",
+    "village": "Cat Cat",
+    "region": "Northwest Vietnam"
+  },
+  "ethnic_info": {
+    "subgroup": "Black Hmong",
+    "local_name": ""
+  },
+  "pattern_info": {
+    "collection": "traditional",
+    "is_authentic": true,
+    "confidence_score": 0.95
+  },
+  "visual_features": {
+    "dominant_colors": [
+      "black",
+      "indigo",
+      "white"
+    ],
+    "background_color": "black",
+    "symmetry": "radial",
+    "geometric_shapes": [
+      "spiral",
+      "triangle",
+      "diamond"
+    ],
+    "complexity_level": "high",
+    "border_type": "continuous"
+  },
+  "cultural_meaning": {
+    "motifs": [
+      "snail shell",
+      "mountain",
+      "seed"
+    ],
+    "symbolism": "Connection to nature, endurance, and agricultural cycles",
+    "usage": [
+      "clothing border",
+      "skirt",
+      "baby carrier"
+    ],
+    "gender_association": "female",
+    "ritual_usage": []
+  }
+}
